@@ -16,6 +16,12 @@
     <Filter Include="源文件\camera">
       <UniqueIdentifier>{249ed63e-c5c6-46cd-9c78-fec8011a3199}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\utils">
+      <UniqueIdentifier>{3e26b941-7599-49ee-96b7-b6cf067bc96e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\model">
+      <UniqueIdentifier>{743af5dd-f422-46d1-8831-b964e7cdf4b8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -24,10 +30,25 @@
     <ClCompile Include="src\camera\camera.cpp">
       <Filter>源文件\camera</Filter>
     </ClCompile>
+    <ClCompile Include="src\utils\window.cpp">
+      <Filter>源文件\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\model\model.cpp">
+      <Filter>源文件\model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\camera\camera.h">
       <Filter>源文件\camera</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\utils.h">
+      <Filter>源文件\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\window.h">
+      <Filter>源文件\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model\model.h">
+      <Filter>源文件\model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

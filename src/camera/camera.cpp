@@ -1,5 +1,21 @@
 #include"camera.h"
 #include<iostream>
-void test() {
-	std::cout << "HELLO WORLD" << std::endl;
+camera::camera() {
+	_camera << 1., 0., 0., 0., 1., 0., 0., 0., 1.;
+}
+
+Eigen::Matrix<double, 3, 3> camera::trans(double x_angle, double y_angle, double z_angle) {
+	return utils::roate_x(x_angle) * utils::roate_y(y_angle) * utils::roate_z(z_angle) * _camera;
+}
+
+void camera::move(double dx,double dy,double dz) {
+	this->dx += dx;
+	this->dy += dy;
+	this->dz += dz;
+}
+
+void camera::clear_move() {
+	this->dx = 0;
+	this->dy = 0;
+	this->dz = 0;
 }
