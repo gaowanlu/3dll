@@ -4,6 +4,7 @@
 #include <graphics.h>
 #include <easyx.h>
 #include <Eigen/Dense>
+#include "../model/model.h"
 #include "../camera/camera.h"
 
 /**
@@ -82,5 +83,11 @@ public:
 	 * @brief 获得窗口操控信息
 	*/
 	bool get_message(ExMessage* message);
+	
+	/**
+	 * @brief 渲染模型
+	 * @param model 
+	*/
+	void render_model(Model m_model, double resize, camera m_camera, Eigen::Matrix<double, 3, 3> camera_realtime);
 };
 #endif // !__WINDOW_H__

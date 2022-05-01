@@ -15,14 +15,14 @@ int main(int argc, char** argv) {
 	window m_window(1000,700,1);
 	m_window.set_linecolor(0,255,0);
 	Model model_1({
-		{2, 3, 0},
-		{2, 5, 0},
-		{4, 3, 0},
-		{4, 5, 0},
-		{2,	3, 2},
-		{2, 5, 2},
-		{4, 3, 2},
-		{4, 5, 2}},'1');
+		{2, 13, 0},
+		{2, 15, 0},
+		{14, 13, 0},
+		{14, 15, 0},
+		{2,	13, 7},
+		{2, 15, 7},
+		{14, 13, 7},
+		{14, 15, 7}},'1');
 	Model model_2({
 		{7, -11, 0},
 		{7, -5, 0},
@@ -38,10 +38,19 @@ int main(int argc, char** argv) {
 		{-2, -5, 0},
 		{-4, -3, 0},
 		{-4, -5, 0},
-		{-2, -3, 2},
-		{-2, -5, 2},
-		{-4, -3, 2},
-		{-4, -5, 2} }, '3');
+		{-2, -3, 20},
+		{-2, -5, 20},
+		{-4, -3, 20},
+		{-4, -5, 20} }, '3');
+	Model model_z({
+		{0, 0, 0},
+		{0, 0, 70} }, 'z');
+	Model model_x({
+		{0, 0, 0},
+		{30, 0, 0} }, 'x');
+	Model model_y({
+		{0, 0, 0},
+		{0, 30, 0} }, 'y');
 	
 	std::vector<Model>grid;//地的网格
 	for (int x = -30; x <= 30; x+=5) {
@@ -49,11 +58,11 @@ int main(int argc, char** argv) {
 			Eigen::Matrix<double, 3, 1> v1(
 				 x,y ,0);
 			Eigen::Matrix<double, 3, 1> v2(
-				x+2,y,0 );
+				x+5,y,0 );
 			Eigen::Matrix<double, 3, 1> v3(
-				x+2,y+2,0 );
+				x+5,y+5,0 );
 			Eigen::Matrix<double, 3, 1> v4(
-				x,y+2,0);
+				x,y+5,0);
 			std::vector<Eigen::Matrix<double, 3, 1>> ves{v1, v2, v3, v4};
 			Model block(ves, ' ');
 			grid.push_back(block);
@@ -71,16 +80,17 @@ int main(int argc, char** argv) {
 	Eigen::Matrix<double, 3, 3> camera_realtime=m_camera.trans(0,0,0);
 
 	while (1) {
+		m_window.set_linecolor(255, 0, 0);
+		m_window.render_model(model_x, last_resize, m_camera, camera_realtime);
+		m_window.render_model(model_y, last_resize, m_camera, camera_realtime);
+		m_window.render_model(model_z, last_resize, m_camera, camera_realtime);
 		//渲染地面
 		m_window.set_linecolor(155,155,155);
 		for (size_t j = 0; j < grid.size(); j++) {
 			std::vector<std::vector<int>> dots;
 			std::vector<Eigen::Matrix<double, 3, 1>> block = grid[j].resize(last_resize).get_matrix();
-	/*		std::cout << block[0](1) << std::endl;
-			std::cout << block[0](0) << std::endl;*/
 			for (int i = 0; i <= block.size(); i++) {
-				//std::cout << block[i % block.size()](0) << std::endl;
-				Eigen::Matrix<double, 3, 1> dot_realtime = camera_realtime.inverse() * m_window.get_world_base() * block[i % block.size()];
+				Eigen::Matrix<double, 3, 1> dot_realtime =  m_window.get_world_base() *camera_realtime.inverse() * block[i % block.size()];
 				Eigen::Matrix<double, 3, 1> window_dot = m_window.to_xy(dot_realtime(0), dot_realtime(1), dot_realtime(2),m_camera);
 				dots.push_back(std::vector<int>{ (int)window_dot(0), (int)window_dot(1) });
 			}
@@ -92,29 +102,11 @@ int main(int argc, char** argv) {
 				{dots[4][0],dots[4][1]} };
 			polygon(pts, 5);
 		}
-		//Sleep(1000);
-		//continue;
-		//取出相机的向量进行基变换
+
+		//模型渲染
 		m_window.set_linecolor(0, 255, 0);
 		for (std::size_t k = 0; k < models.size();k++) {
-			auto model = models[k].resize(last_resize).get_matrix();
-			//渲染物品
-			for (std::size_t i = 0; i < model.size(); i++) {
-				Eigen::Matrix<double, 3, 1> dot = model[i];//获得模型的向量1
-				//变换到相机坐标系内
-				Eigen::Matrix<double, 3, 1> dot1_realtime = camera_realtime.inverse() * m_window.get_world_base() * dot;
-				//获取模型向量2
-				for (std::size_t j = 0; j < model.size(); j++) {
-					Eigen::Matrix<double, 3, 1> dot = model[j];
-					//变换到相机坐标系内
-					Eigen::Matrix<double, 3, 1> dot2_realtime = camera_realtime.inverse() * m_window.get_world_base() * dot;
-					//将x y投到屏幕上，变换到图像坐标系
-					Eigen::Matrix<double, 3, 1> window_dot1 = m_window.to_xy(dot1_realtime(0), dot1_realtime(1), dot1_realtime(2),m_camera);
-					Eigen::Matrix<double, 3, 1> window_dot2 = m_window.to_xy(dot2_realtime(0), dot2_realtime(1), dot2_realtime(2),m_camera);
-					//画出向量1到向量2的连线
-					m_window.draw_t_line(window_dot1, window_dot2);
-				}
-			}
+			m_window.render_model(models[k],last_resize,m_camera,camera_realtime);
 		}
 
 		//操控部分
@@ -141,8 +133,8 @@ int main(int argc, char** argv) {
 				m_camera.clear_move();//偏移量归零
 			}
 			if (message.lbutton) {//鼠标左键按下
-				int dx = message.x - last_x;//求出鼠标 x y轴偏移量
-				int dy = message.y - last_y;
+				int dx = -(message.x - last_x);//求出鼠标 x y轴偏移量
+				int dy = -(message.y - last_y);
 				last_x = message.x;
 				last_y = message.y;
 				if (fabs(dx) < 10 && fabs(dy) < 10) {
@@ -152,17 +144,19 @@ int main(int argc, char** argv) {
 				camera_realtime = m_camera.trans(x_angle, y_angle, z_angle);//调整相机参数
 			}
 			if (message.wheel) {
-				if (message.ctrl) {//调整缩放参数缩放
-					double dz = message.wheel / 10.;
+				if (message.ctrl) {//z轴旋转
+					double dz = message.wheel / 20.;
 					z_angle = ((int)z_angle + (int)dz) % 360;
 				}
-				else {//z轴旋转
-					double dz = fabs(message.wheel) / 300.;//一次滚轮120
+				else {//调整缩放参数缩放
+					double dz = fabs(message.wheel) / 950.;//一次滚轮120
 					if (message.wheel < 0 && (last_resize - dz)>0.1) {//变小
 						last_resize = last_resize - dz;
+						m_camera.dz=last_resize;
 					}
 					else if (last_resize + dz < 15) {//变大
 						last_resize = last_resize + dz;
+						m_camera.dz = last_resize;
 					}
 				}
 				//相机进行变换

@@ -1,12 +1,8 @@
-# 3dll
+# 3dll 使用C++实现简单的3D渲染
 
-使用C++实现简单的3D渲染
+## 代码
 
-## 快速开始
-
-```shell
-git clone https://hub.fastgit.xyz/gaowanlu/3dll.git
-```
+代码请见github代码仓库 [https://github.com/gaowanlu/3dll](https://github.com/gaowanlu/3dll)
 
 ## 为什么写了它
 
@@ -20,33 +16,36 @@ git clone https://hub.fastgit.xyz/gaowanlu/3dll.git
 
 1、相机坐标系的旋转
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/5f74decc37d348549c864ae0291ad3c8.png#pic_center)
-2、鼠标点击且移动鼠标进行相机的旋转、滚轮滚动为z轴旋转
+![在这里插入图片描述](https://img-blog.csdnimg.cn/ec2443792805477ab7bcd7906cf2edca.png#pic_center)
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/401d1c84a9b444fb9a013f1523e09983.png#pic_center)
 
-3、Ctrl+滚轮 支持缩小放大
+2、鼠标点击且移动鼠标进行x与y轴的旋转、Ctrl+滚轮 支持z轴旋转
 
-![在这里插入图片描述](https://img-blog.csdnimg.cn/cdb8b27c00324e93a30b96435d765412.png#pic_center)
+![在这里插入图片描述](https://img-blog.csdnimg.cn/f951e4aed6c342a596c64cdd4d55d9ff.png#pic_center)
 
-## 环境搭建
+
+3、滚轮对为相机位置向量进行放缩
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/957d1133dfbf4405885b0a7e336588aa.png#pic_center)
+
+
+
+## 快速开始
+
+```shell
+git clone https://hub.fastgit.xyz/gaowanlu/3dll.git
+```
 
 或在Github [https://github/gaowanlu/3dll](https://github/gaowanlu/3dll)、获取最新的工程效果  
 
 请使用Visual Studio 2022 打开项目  ，或者自己使用其他IDE进行构建  
-
-项目 =》属性 =》C/C++ =》常规添加本项目的include文件夹路径到附加包含目录属性  
-
-项目 =》属性 =》链接器 =》将本项目的lib/x64文件夹路径添加附加库目录  
-
-注意设置上面步骤时，尽量选择 配置：所有配置 平台：x64  、以免新手怎么弄都跑不起来  
-
+  
 ## 线性代数
 
 课程推荐  
 
-* Bilibili MIT线性代数课程 <https://www.bilibili.com/video/BV1ix411f7Yp>  
-* 线性代数的本质  <https://www.bilibili.com/video/BV1ib411t7YR>
+* Bilibili MIT线性代数课程 https://www.bilibili.com/video/BV1ix411f7Yp  
+* 线性代数的本质  https://www.bilibili.com/video/BV1ib411t7YR   
 
 ## 路漫漫  
 

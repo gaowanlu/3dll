@@ -64,9 +64,9 @@ Eigen::Matrix<double, 3, 1> window::to_xy(double x, double y, double z,camera m_
 }
 
 void window::draw_t_line(Eigen::Matrix<double, 3, 1> dot1, Eigen::Matrix<double, 3, 1> dot2) {
-	if (dot1(2) > 0 || dot2(2) > 0) {//向有一个向量在相机前面时才进行显示此连线
+	//if (dot1(2) > 0 || dot2(2) > 0) {//向有一个向量在相机前面时才进行显示此连线
 		line(dot1(0), dot1(1), dot2(0), dot2(1));
-	}
+	//}
 }
 
 void window::clear() {
@@ -81,4 +81,25 @@ bool window::get_message(ExMessage *message) {
 	bool result= peekmessage(message);
 	flushmessage();
 	return result;
+}
+
+void window::render_model(Model m_model,double resize,camera m_camera, Eigen::Matrix<double, 3, 3> camera_realtime) {
+	auto model = m_model.resize(resize).get_matrix();
+	//渲染物品
+	for (std::size_t i = 0; i < model.size(); i++) {
+		Eigen::Matrix<double, 3, 1> dot = model[i];//获得模型的向量1
+		//变换到相机坐标系内
+		Eigen::Matrix<double, 3, 1> dot1_realtime = this->get_world_base() * camera_realtime.inverse() * dot;
+		//获取模型向量2
+		for (std::size_t j = 0; j < model.size(); j++) {
+			Eigen::Matrix<double, 3, 1> dot = model[j];
+			//变换到相机坐标系内
+			Eigen::Matrix<double, 3, 1> dot2_realtime = this->get_world_base() * camera_realtime.inverse() * dot;
+			//将x y投到屏幕上，变换到图像坐标系
+			Eigen::Matrix<double, 3, 1> window_dot1 = this->to_xy(dot1_realtime(0), dot1_realtime(1), dot1_realtime(2), m_camera);
+			Eigen::Matrix<double, 3, 1> window_dot2 = this->to_xy(dot2_realtime(0), dot2_realtime(1), dot2_realtime(2), m_camera);
+			//画出向量1到向量2的连线
+			this->draw_t_line(window_dot1, window_dot2);
+		}
+	}
 }
