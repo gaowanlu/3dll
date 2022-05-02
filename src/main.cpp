@@ -1,176 +1,196 @@
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 #include <iostream>
-#include <graphics.h>
-#include <easyx.h>
-#include <cmath>
-#include <vector>
-#include <conio.h>
-#include <Eigen/Dense>
-#include "utils/utils.h"
-#include "camera/camera.h"
-#include "utils/window.h"
-#include "model/model.h"
-#include "camera/camera.h"
 
-int main(int argc, char** argv) {
-	window m_window(1000,700,1);
-	m_window.set_linecolor(0,255,0);
-	Model model_1({
-		{2, 13, 0},
-		{2, 15, 0},
-		{14, 13, 0},
-		{14, 15, 0},
-		{2,	13, 7},
-		{2, 15, 7},
-		{14, 13, 7},
-		{14, 15, 7}},'1');
-	Model model_2({
-		{7, -11, 0},
-		{7, -5, 0},
-		{9, -15, 0},
-		{27, -5, 0},
-		{7, -31, 2},
-		{7, -5, 2},
-		{9, -33, 2},
-		{17, -5, 2} }, '2');
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void processInput(GLFWwindow* window);
 
-	Model model_3({
-		{-2, -3, 0},
-		{-2, -5, 0},
-		{-4, -3, 0},
-		{-4, -5, 0},
-		{-2, -3, 20},
-		{-2, -5, 20},
-		{-4, -3, 20},
-		{-4, -5, 20} }, '3');
-	Model model_z({
-		{0, 0, 0},
-		{0, 0, 70} }, 'z');
-	Model model_x({
-		{0, 0, 0},
-		{30, 0, 0} }, 'x');
-	Model model_y({
-		{0, 0, 0},
-		{0, 30, 0} }, 'y');
-	
-	std::vector<Model>grid;//地的网格
-	for (int x = -30; x <= 30; x+=5) {
-		for (int y = -30; y <= 30; y+=5) {
-			Eigen::Matrix<double, 3, 1> v1(
-				 x,y ,0);
-			Eigen::Matrix<double, 3, 1> v2(
-				x+5,y,0 );
-			Eigen::Matrix<double, 3, 1> v3(
-				x+5,y+5,0 );
-			Eigen::Matrix<double, 3, 1> v4(
-				x,y+5,0);
-			std::vector<Eigen::Matrix<double, 3, 1>> ves{v1, v2, v3, v4};
-			Model block(ves, ' ');
-			grid.push_back(block);
-		}
-	}
-	//建立模型
-	std::vector<Model>models{model_1,model_2,model_3};
-	camera m_camera;
+// settings
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 
-	//记录上一次鼠标的位置
-	int last_x = 0, last_y = 0;
-	double last_resize = 1.0;//缩放参数
-	double x_angle = 0., y_angle = 0., z_angle = 0.;//相机坐标系实时旋转角度
+const char* vertexShaderSource = "#version 330 core\n"
+"layout (location = 0) in vec3 aPos;\n"
+"void main()\n"
+"{\n"
+"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"}\0";
+const char* fragmentShaderSource = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+"}\n\0";
 
-	Eigen::Matrix<double, 3, 3> camera_realtime=m_camera.trans(0,0,0);
+int main()
+{
+    // glfw: initialize and configure
+    // ------------------------------
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	while (1) {
-		m_window.set_linecolor(255, 0, 0);
-		m_window.render_model(model_x, last_resize, m_camera, camera_realtime);
-		m_window.render_model(model_y, last_resize, m_camera, camera_realtime);
-		m_window.render_model(model_z, last_resize, m_camera, camera_realtime);
-		//渲染地面
-		m_window.set_linecolor(155,155,155);
-		for (size_t j = 0; j < grid.size(); j++) {
-			std::vector<std::vector<int>> dots;
-			std::vector<Eigen::Matrix<double, 3, 1>> block = grid[j].resize(last_resize).get_matrix();
-			for (int i = 0; i <= block.size(); i++) {
-				Eigen::Matrix<double, 3, 1> dot_realtime =  m_window.get_world_base() *camera_realtime.inverse() * block[i % block.size()];
-				Eigen::Matrix<double, 3, 1> window_dot = m_window.to_xy(dot_realtime(0), dot_realtime(1), dot_realtime(2),m_camera);
-				dots.push_back(std::vector<int>{ (int)window_dot(0), (int)window_dot(1) });
-			}
-			POINT pts[5] = {
-				{dots[0][0],dots[0][1]},
-				{dots[1][0],dots[1][1]},
-				{dots[2][0],dots[2][1]},
-				{dots[3][0],dots[3][1]},
-				{dots[4][0],dots[4][1]} };
-			polygon(pts, 5);
-		}
+#ifdef __APPLE__
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
 
-		//模型渲染
-		m_window.set_linecolor(0, 255, 0);
-		for (std::size_t k = 0; k < models.size();k++) {
-			m_window.render_model(models[k],last_resize,m_camera,camera_realtime);
-		}
+    // glfw window creation
+    // --------------------
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    if (window == NULL)
+    {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-		//操控部分
-		ExMessage message;
-		if (m_window.get_message(&message)) {
-			if (message.message == WM_KEYDOWN) {
-				if (message.vkcode == 'A') {
-					m_camera.move(1, 0, 0);
-				}
-				else if (message.vkcode == 'S') {
-					m_camera.move(0, 1, 0);
-				}
-				else if (message.vkcode == 'D') {
-					m_camera.move(-1, 0, 0);
-				}
-				else if (message.vkcode == 'W') {
-					m_camera.move(0, -1, 0);
-				}
-			}
-			if (message.mbutton) {//鼠标中键按下
-				x_angle = 0, y_angle = 0, z_angle = 0;
-				camera_realtime = m_camera.trans(x_angle, y_angle, z_angle);//相机归位
-				last_resize = 1.;//缩放归位
-				m_camera.clear_move();//偏移量归零
-			}
-			if (message.lbutton) {//鼠标左键按下
-				int dx = -(message.x - last_x);//求出鼠标 x y轴偏移量
-				int dy = -(message.y - last_y);
-				last_x = message.x;
-				last_y = message.y;
-				if (fabs(dx) < 10 && fabs(dy) < 10) {
-					x_angle = ((int)x_angle + dy) % 360, y_angle = ((int)y_angle + dx) % 360, z_angle += 0;
-				}
-				//相机进行变换
-				camera_realtime = m_camera.trans(x_angle, y_angle, z_angle);//调整相机参数
-			}
-			if (message.wheel) {
-				if (message.ctrl) {//z轴旋转
-					double dz = message.wheel / 20.;
-					z_angle = ((int)z_angle + (int)dz) % 360;
-				}
-				else {//调整缩放参数缩放
-					double dz = fabs(message.wheel) / 950.;//一次滚轮120
-					if (message.wheel < 0 && (last_resize - dz)>0.1) {//变小
-						last_resize = last_resize - dz;
-						m_camera.dz=last_resize;
-					}
-					else if (last_resize + dz < 15) {//变大
-						last_resize = last_resize + dz;
-						m_camera.dz = last_resize;
-					}
-				}
-				//相机进行变换
-				camera_realtime = m_camera.trans(x_angle, y_angle, z_angle);//调整相机参数
-			}
-			//画出文字
-			RECT r = { 0, 0, 639, 479 };
-			TCHAR s[512];
-			_stprintf_s(s, _T("x_angle %.3lf y_angle %.3lf z_angle %.3lf resize %.3lf "),x_angle,y_angle,z_angle,last_resize);
-			drawtext(s, & r, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-		}
+    // glad: load all OpenGL function pointers
+    // ---------------------------------------
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
 
-		m_window.sleep(50);//睡眠
-		m_window.clear();//清屏
-	}
-	return 0;
+
+    // build and compile our shader program
+    // ------------------------------------
+    // vertex shader
+    unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+    // check for shader compile errors
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    // fragment shader
+    unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+    // check for shader compile errors
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+    // link shaders
+    unsigned int shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+    // check for linking errors
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    // set up vertex data (and buffer(s)) and configure vertex attributes
+    // ------------------------------------------------------------------
+    float vertices[] = {
+         0.5f,  0.5f, 0.0f,  // top right
+         0.5f, -0.5f, 0.0f,  // bottom right
+        -0.5f, -0.5f, 0.0f,  // bottom left
+        -0.5f,  0.5f, 0.0f   // top left 
+    };
+    unsigned int indices[] = {  // note that we start from 0!
+        0, 1, 3,  // first Triangle
+        1, 2, 3   // second Triangle
+    };
+    unsigned int VBO, VAO, EBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
+    //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+    // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+    glBindVertexArray(0);
+
+
+    // uncomment this call to draw in wireframe polygons.
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    // render loop
+    // -----------
+    while (!glfwWindowShouldClose(window))
+    {
+        // input
+        // -----
+        processInput(window);
+
+        // render
+        // ------
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        // draw our first triangle
+        glUseProgram(shaderProgram);
+        glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+        //glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        // glBindVertexArray(0); // no need to unbind it every time 
+
+        // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+        // -------------------------------------------------------------------------------
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    // optional: de-allocate all resources once they've outlived their purpose:
+    // ------------------------------------------------------------------------
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
+    glDeleteProgram(shaderProgram);
+
+    // glfw: terminate, clearing all previously allocated GLFW resources.
+    // ------------------------------------------------------------------
+    glfwTerminate();
+    return 0;
+}
+
+// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
+// ---------------------------------------------------------------------------------------------------------
+void processInput(GLFWwindow* window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+}
+
+// glfw: whenever the window size changed (by OS or user resize) this callback function executes
+// ---------------------------------------------------------------------------------------------
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    // make sure the viewport matches the new window dimensions; note that width and 
+    // height will be significantly larger than specified on retina displays.
+    glViewport(0, 0, width, height);
 }

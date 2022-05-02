@@ -22,6 +22,9 @@
     <Filter Include="源文件\model">
       <UniqueIdentifier>{743af5dd-f422-46d1-8831-b964e7cdf4b8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件\glad">
+      <UniqueIdentifier>{5a589062-9324-4ed4-be01-4c02010f2f30}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -35,6 +38,9 @@
     </ClCompile>
     <ClCompile Include="src\model\model.cpp">
       <Filter>源文件\model</Filter>
+    </ClCompile>
+    <ClCompile Include="src\glad\glad.cpp">
+      <Filter>源文件\glad</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
