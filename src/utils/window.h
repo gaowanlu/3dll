@@ -6,6 +6,7 @@
 #include <Eigen/Dense>
 #include "../model/model.h"
 #include "../camera/camera.h"
+#include "../model/cuboid.h"
 
 /**
  * @brief 窗口
@@ -42,6 +43,11 @@ public:
 	* @param b 绿
 	*/
 	void set_linecolor(unsigned char r, unsigned char g, unsigned char  b);
+
+	/**
+	 * @brief 设置填充颜色
+	*/
+	void set_fillcolor(unsigned char r, unsigned char g, unsigned char  b);
 
 	/**
 	* @brief 获取世界坐标系基
@@ -85,9 +91,13 @@ public:
 	bool get_message(ExMessage* message);
 	
 	/**
-	 * @brief 渲染模型
-	 * @param model 
+	 * @brief 渲染model
 	*/
 	void render_model(Model m_model, double resize, camera m_camera, Eigen::Matrix<double, 3, 3> camera_realtime);
+
+	/**
+	 * @brief 渲染立方体
+	*/
+	void render_cuboid(cuboid& _cuboid, double resize, camera m_camera, Eigen::Matrix<double, 3, 3> camera_realtime);
 };
 #endif // !__WINDOW_H__

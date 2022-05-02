@@ -10,38 +10,58 @@
 #include "utils/window.h"
 #include "model/model.h"
 #include "camera/camera.h"
+#include "model/cuboid.h"
 
 int main(int argc, char** argv) {
 	window m_window(1000,700,1);
 	m_window.set_linecolor(0,255,0);
-	Model model_1({
-		{2, 13, 0},
-		{2, 15, 0},
-		{14, 13, 0},
-		{14, 15, 0},
-		{2,	13, 7},
-		{2, 15, 7},
-		{14, 13, 7},
-		{14, 15, 7}},'1');
-	Model model_2({
-		{7, -11, 0},
-		{7, -5, 0},
-		{9, -15, 0},
-		{27, -5, 0},
-		{7, -31, 2},
-		{7, -5, 2},
-		{9, -33, 2},
-		{17, -5, 2} }, '2');
+	cuboid model_1({
+		Model({//底面
+			{3, 3, 0 },
+			{3, 6, 0},
+			{6, 6, 0},
+			{6, 3, 0}
+		}),
+		Model({//顶面
+			{3, 3, 10 },
+			{3, 6, 10},
+			{6, 6, 10},
+			{6, 3, 10}
+		}),
+		Model({//前面
+			{3, 3, 0 },
+			{6, 3, 0},
+			{6, 3, 10},
+			{3, 3, 10}
+		}),
+		Model({//后面
+			{3, 6, 0 },
+			{6, 6, 0},
+			{6, 6, 10},
+			{3, 6, 10}
+		}),
+		Model({//左面
+			{3, 3, 0 },
+			{3, 6, 0},
+			{3, 6, 10},
+			{3, 3, 10}
+		}),
+		Model({//右面
+			{6, 3, 0 },
+			{6, 6, 0},
+			{6, 6, 10},
+			{6, 3, 10}
+		})
+	});
+	//建立模型
+	std::vector<cuboid>models;
+	models.push_back(model_1);
+	for (int i = 3; i <= 99; i+=3) {
+		models.push_back(model_1.move(i, 0, 0));
+		models.push_back(model_1.move(0, i, 0));
+	}
+	models.push_back(model_1.move(-10, -10, 10));
 
-	Model model_3({
-		{-2, -3, 0},
-		{-2, -5, 0},
-		{-4, -3, 0},
-		{-4, -5, 0},
-		{-2, -3, 20},
-		{-2, -5, 20},
-		{-4, -3, 20},
-		{-4, -5, 20} }, '3');
 	Model model_z({
 		{0, 0, 0},
 		{0, 0, 70} }, 'z');
@@ -52,7 +72,7 @@ int main(int argc, char** argv) {
 		{0, 0, 0},
 		{0, 30, 0} }, 'y');
 	
-	std::vector<Model>grid;//地的网格
+	cuboid grid;//地的网格
 	for (int x = -30; x <= 30; x+=5) {
 		for (int y = -30; y <= 30; y+=5) {
 			Eigen::Matrix<double, 3, 1> v1(
@@ -68,8 +88,7 @@ int main(int argc, char** argv) {
 			grid.push_back(block);
 		}
 	}
-	//建立模型
-	std::vector<Model>models{model_1,model_2,model_3};
+
 	camera m_camera;
 
 	//记录上一次鼠标的位置
@@ -80,33 +99,20 @@ int main(int argc, char** argv) {
 	Eigen::Matrix<double, 3, 3> camera_realtime=m_camera.trans(0,0,0);
 
 	while (1) {
+		//渲染地面
+		m_window.set_fillcolor(200, 200, 200);
+		m_window.set_linecolor(155,155,155);
+		m_window.render_cuboid(grid,last_resize, m_camera, camera_realtime);
 		m_window.set_linecolor(255, 0, 0);
 		m_window.render_model(model_x, last_resize, m_camera, camera_realtime);
 		m_window.render_model(model_y, last_resize, m_camera, camera_realtime);
 		m_window.render_model(model_z, last_resize, m_camera, camera_realtime);
-		//渲染地面
-		m_window.set_linecolor(155,155,155);
-		for (size_t j = 0; j < grid.size(); j++) {
-			std::vector<std::vector<int>> dots;
-			std::vector<Eigen::Matrix<double, 3, 1>> block = grid[j].resize(last_resize).get_matrix();
-			for (int i = 0; i <= block.size(); i++) {
-				Eigen::Matrix<double, 3, 1> dot_realtime =  m_window.get_world_base() *camera_realtime.inverse() * block[i % block.size()];
-				Eigen::Matrix<double, 3, 1> window_dot = m_window.to_xy(dot_realtime(0), dot_realtime(1), dot_realtime(2),m_camera);
-				dots.push_back(std::vector<int>{ (int)window_dot(0), (int)window_dot(1) });
-			}
-			POINT pts[5] = {
-				{dots[0][0],dots[0][1]},
-				{dots[1][0],dots[1][1]},
-				{dots[2][0],dots[2][1]},
-				{dots[3][0],dots[3][1]},
-				{dots[4][0],dots[4][1]} };
-			polygon(pts, 5);
-		}
 
 		//模型渲染
-		m_window.set_linecolor(0, 255, 0);
+		m_window.set_linecolor(200, 134, 45);
+		m_window.set_fillcolor(124, 23, 124);
 		for (std::size_t k = 0; k < models.size();k++) {
-			m_window.render_model(models[k],last_resize,m_camera,camera_realtime);
+			m_window.render_cuboid(models[k],last_resize,m_camera,camera_realtime);
 		}
 
 		//操控部分

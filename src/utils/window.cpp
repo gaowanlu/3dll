@@ -64,9 +64,9 @@ Eigen::Matrix<double, 3, 1> window::to_xy(double x, double y, double z,camera m_
 }
 
 void window::draw_t_line(Eigen::Matrix<double, 3, 1> dot1, Eigen::Matrix<double, 3, 1> dot2) {
-	//if (dot1(2) > 0 || dot2(2) > 0) {//向有一个向量在相机前面时才进行显示此连线
+	if (dot1(2) > 0 && dot2(2) > 0) {//向有一个向量在相机前面时才进行显示此连线
 		line(dot1(0), dot1(1), dot2(0), dot2(1));
-	//}
+	}
 }
 
 void window::clear() {
@@ -94,7 +94,7 @@ void window::render_model(Model m_model,double resize,camera m_camera, Eigen::Ma
 		for (std::size_t j = 0; j < model.size(); j++) {
 			Eigen::Matrix<double, 3, 1> dot = model[j];
 			//变换到相机坐标系内
-			Eigen::Matrix<double, 3, 1> dot2_realtime = this->get_world_base() * camera_realtime.inverse() * dot;
+			Eigen::Matrix<double, 3, 1> dot2_realtime =camera_realtime.inverse() * this->get_world_base() * dot;
 			//将x y投到屏幕上，变换到图像坐标系
 			Eigen::Matrix<double, 3, 1> window_dot1 = this->to_xy(dot1_realtime(0), dot1_realtime(1), dot1_realtime(2), m_camera);
 			Eigen::Matrix<double, 3, 1> window_dot2 = this->to_xy(dot2_realtime(0), dot2_realtime(1), dot2_realtime(2), m_camera);
@@ -102,4 +102,27 @@ void window::render_model(Model m_model,double resize,camera m_camera, Eigen::Ma
 			this->draw_t_line(window_dot1, window_dot2);
 		}
 	}
+}
+
+void window::render_cuboid(cuboid& _cuboid, double resize, camera m_camera, Eigen::Matrix<double, 3, 3> camera_realtime) {
+	for (size_t j = 0; j < _cuboid._vecs.size(); j++) {
+		std::vector<std::vector<int>> dots;
+		std::vector<Eigen::Matrix<double, 3, 1>> block = _cuboid._vecs[j].resize(resize).get_matrix();
+		for (int i = 0; i <= block.size(); i++) {
+			Eigen::Matrix<double, 3, 1> dot_realtime = camera_realtime.inverse() * this->get_world_base() * block[i % block.size()];
+			Eigen::Matrix<double, 3, 1> window_dot = this->to_xy(dot_realtime(0), dot_realtime(1), dot_realtime(2), m_camera);
+			dots.push_back(std::vector<int>{ (int)window_dot(0), (int)window_dot(1) });
+		}
+		POINT pts[5] = {
+			{dots[0][0],dots[0][1]},
+			{dots[1][0],dots[1][1]},
+			{dots[2][0],dots[2][1]},
+			{dots[3][0],dots[3][1]},
+			{dots[4][0],dots[4][1]} };
+		fillpolygon(pts, 5);
+	}
+}
+
+void window::set_fillcolor(unsigned char r, unsigned char g, unsigned char  b) {
+	setfillcolor(RGB(r,g,b));
 }

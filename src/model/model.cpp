@@ -23,3 +23,11 @@ Model Model::resize(double resize) {
 	Model model(result,' ');
 	return model;
 }
+
+Model Model::move(double x, double y, double z) {
+	std::vector<std::vector<double>> new_vecs;
+	for (Eigen::Matrix<double, 3, 1> &v : _vecs) {
+		new_vecs.push_back({v(0)+x,v(1)+y,v(2)+z});
+	}
+	return Model(new_vecs);
+}

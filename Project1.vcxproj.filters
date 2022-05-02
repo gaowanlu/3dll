@@ -36,6 +36,9 @@
     <ClCompile Include="src\model\model.cpp">
       <Filter>源文件\model</Filter>
     </ClCompile>
+    <ClCompile Include="src\model\cuboid.cpp">
+      <Filter>源文件\model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\camera\camera.h">
@@ -48,6 +51,9 @@
       <Filter>源文件\utils</Filter>
     </ClInclude>
     <ClInclude Include="src\model\model.h">
+      <Filter>源文件\model</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model\cuboid.h">
       <Filter>源文件\model</Filter>
     </ClInclude>
   </ItemGroup>
