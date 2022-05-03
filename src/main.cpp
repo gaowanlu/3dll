@@ -92,17 +92,23 @@ int main(int argc, char** argv) {
 	camera m_camera;
 
 	//记录上一次鼠标的位置
-	int last_x = 0, last_y = 0;
-	double last_resize = 1.0;//缩放参数
+	int last_x = 0, last_y = 0;//用于手势操作
+	double last_resize = 1.0;//相机镜头缩放参数
 	double x_angle = 0., y_angle = 0., z_angle = 0.;//相机坐标系实时旋转角度
 
-	Eigen::Matrix<double, 3, 3> camera_realtime=m_camera.trans(0,0,0);
+	Eigen::Matrix<double, 3, 3> camera_realtime=m_camera.trans(0,0,0);//此时的实时相机参数
 
 	while (1) {
+		x_angle+=1, y_angle+=2, z_angle+=3;
+		if (x_angle > 360)x_angle = -150;
+		if (y_angle > 360)y_angle = -150;
+		if (z_angle > 360)z_angle = -150;
+		camera_realtime = m_camera.trans(x_angle, y_angle, z_angle);
 		//渲染地面
 		m_window.set_fillcolor(200, 200, 200);
 		m_window.set_linecolor(155,155,155);
 		m_window.render_cuboid(grid,last_resize, m_camera, camera_realtime);
+		//渲染x y z轴
 		m_window.set_linecolor(255, 0, 0);
 		m_window.render_model(model_x, last_resize, m_camera, camera_realtime);
 		m_window.render_model(model_y, last_resize, m_camera, camera_realtime);
@@ -144,7 +150,7 @@ int main(int argc, char** argv) {
 				last_x = message.x;
 				last_y = message.y;
 				if (fabs(dx) < 10 && fabs(dy) < 10) {
-					x_angle = ((int)x_angle + dy) % 360, y_angle = ((int)y_angle + dx) % 360, z_angle += 0;
+					x_angle = ((int)x_angle - dy) % 360, y_angle = ((int)y_angle - dx) % 360, z_angle += 0;
 				}
 				//相机进行变换
 				camera_realtime = m_camera.trans(x_angle, y_angle, z_angle);//调整相机参数
@@ -155,14 +161,14 @@ int main(int argc, char** argv) {
 					z_angle = ((int)z_angle + (int)dz) % 360;
 				}
 				else {//调整缩放参数缩放
-					double dz = fabs(message.wheel) / 950.;//一次滚轮120
-					if (message.wheel < 0 && (last_resize - dz)>0.1) {//变小
+					double dz = message.wheel / 4.;//一次滚轮120
+					m_camera.dz += dz;
+					dz = fabs(message.wheel / 960.);
+					if (message.wheel < 0 && (last_resize - dz)>0.01) {//变小
 						last_resize = last_resize - dz;
-						m_camera.dz=last_resize;
 					}
 					else if (last_resize + dz < 15) {//变大
 						last_resize = last_resize + dz;
-						m_camera.dz = last_resize;
 					}
 				}
 				//相机进行变换

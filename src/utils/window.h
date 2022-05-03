@@ -7,6 +7,7 @@
 #include "../model/model.h"
 #include "../camera/camera.h"
 #include "../model/cuboid.h"
+#include "../utils/utils.h"
 
 /**
  * @brief 窗口
@@ -99,5 +100,10 @@ public:
 	 * @brief 渲染立方体
 	*/
 	void render_cuboid(cuboid& _cuboid, double resize, camera m_camera, Eigen::Matrix<double, 3, 3> camera_realtime);
+
+	/**
+	 * @brief 世界坐标系环绕相机坐标系旋转
+	*/
+	Eigen::Matrix<double, 3, 3> trans(Eigen::Matrix<double, 3, 3> camera_realtime, double x_angle, double y_angle, double z_angle);
 };
 #endif // !__WINDOW_H__
