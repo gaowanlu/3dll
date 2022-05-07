@@ -19,20 +19,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\camera\camera.cpp" />
+    <ClCompile Include="src\demo\1_hiwindow.cpp" />
     <ClCompile Include="src\glad\glad.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\model\model.cpp" />
-    <ClCompile Include="src\utils\window.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\camera\camera.h" />
-    <ClInclude Include="src\model\model.h" />
-    <ClInclude Include="src\utils\utils.h" />
-    <ClInclude Include="src\utils\window.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\demo\1_hiwindow.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

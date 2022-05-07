@@ -13,53 +13,35 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="源文件\camera">
-      <UniqueIdentifier>{249ed63e-c5c6-46cd-9c78-fec8011a3199}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\utils">
-      <UniqueIdentifier>{3e26b941-7599-49ee-96b7-b6cf067bc96e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\model">
-      <UniqueIdentifier>{743af5dd-f422-46d1-8831-b964e7cdf4b8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="源文件\glad">
       <UniqueIdentifier>{5a589062-9324-4ed4-be01-4c02010f2f30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\demo">
+      <UniqueIdentifier>{9e5dab29-3f1f-49ec-9182-c9015e86074a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\demo\1_hiwindow">
+      <UniqueIdentifier>{e8672bdf-594c-472f-9c41-3555010a3e5e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\camera\camera.cpp">
-      <Filter>源文件\camera</Filter>
-    </ClCompile>
-    <ClCompile Include="src\utils\window.cpp">
-      <Filter>源文件\utils</Filter>
-    </ClCompile>
-    <ClCompile Include="src\model\model.cpp">
-      <Filter>源文件\model</Filter>
-    </ClCompile>
     <ClCompile Include="src\glad\glad.cpp">
       <Filter>源文件\glad</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\camera\camera.h">
-      <Filter>源文件\camera</Filter>
-    </ClInclude>
-    <ClInclude Include="src\utils\utils.h">
-      <Filter>源文件\utils</Filter>
-    </ClInclude>
-    <ClInclude Include="src\utils\window.h">
-      <Filter>源文件\utils</Filter>
-    </ClInclude>
-    <ClInclude Include="src\model\model.h">
-      <Filter>源文件\model</Filter>
-    </ClInclude>
+    <ClCompile Include="src\demo\1_hiwindow.cpp">
+      <Filter>源文件\demo\1_hiwindow</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md">
       <Filter>资源文件</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\demo\1_hiwindow.h">
+      <Filter>源文件\demo\1_hiwindow</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
