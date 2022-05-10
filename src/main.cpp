@@ -12,8 +12,12 @@
 #include "camera/camera.h"
 #include "model/cuboid.h"
 
+/**
+ * @brief 全局窗口
+*/
+window m_window(1920, 1000, 1);
+
 int main(int argc, char** argv) {
-	window m_window(1000,700,1);
 	m_window.set_linecolor(0,255,0);
 	cuboid model_1({
 		Model({//底面
@@ -183,7 +187,6 @@ int main(int argc, char** argv) {
 			drawtext(s, & r, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 		}
 		m_window.show_frame();//将新的帧渲染到屏幕
-		m_window.sleep(10);//睡眠
 	}
 	return 0;
 }

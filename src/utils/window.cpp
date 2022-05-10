@@ -4,10 +4,18 @@ window::window(int width,int height,int console) {
 	if (width <= 0 || height <= 0) {
 		throw "window can not width or height equals 0";
 	}
-	_width = width;
-	_height = height;
+	_width =_last_width= width;
+	_height = _last_height=height;
 	_world_base << 1., 0., 0., 0., 1., 0., 0., 0., 1.;
 	init_window(console);
+	// 获得窗口句柄
+	this->hWnd = GetHWnd();
+	// 重新设置窗口大小
+	//MoveWindow(hWnd, rect.left, rect.top, 1920, height, true);
+	DWORD  dwStyle = GetWindowLong(this->hWnd, GWL_STYLE);
+	//允许全屏，缩放窗口大小
+	dwStyle |= WS_MAXIMIZE|WS_SIZEBOX|WS_MAXIMIZEBOX|WS_THICKFRAME;
+	SetWindowLong(this->hWnd, GWL_STYLE, dwStyle);
 }
 window::~window() {
 	if (this->_frame) {
@@ -16,12 +24,33 @@ window::~window() {
 }
 
 void window::start_frame() {
+	//获取此时的窗口实时大小
+	// 获取窗口原始大小
+	RECT rect;
+	GetWindowRect(this->hWnd, &rect);
+	int real_height = rect.bottom - rect.top;
+	int real_width = rect.right - rect.left;
+	if (_height != real_height || _width != real_width) {
+		//重新生成画布
+		delete this->_frame;
+		_frame = new IMAGE(real_width, real_height);
+		_last_width = _width;
+		_last_height = _height;
+		_width = real_width;
+		_height= real_height;
+	}
 	SetWorkingImage(this->_frame);
 	this->clear();//画布
 }
 
 void window::show_frame() {
 	SetWorkingImage();
+	if (_last_height != _height || _last_width != _width) {
+		//initgraph(_width, _height, 1);
+		std::cout << "窗口大小改变" << std::endl;
+		_last_height = _height;
+		_last_width = _width;
+	}
 	if (_frame) {
 		putimage(0, 0, _frame);
 	}

@@ -14,8 +14,8 @@
 */
 class window {
 private:
-	int _width;
-	int _height;
+	int _width,_last_width;
+	int _height,_last_height;
 	//世界坐标系基
 	Eigen::Matrix<double, 3, 3> _world_base;
 	/**
@@ -26,6 +26,10 @@ private:
 	 * @brief 帧画面
 	*/
 	IMAGE* _frame;
+	/**
+	 * @brief 窗口句柄
+	*/
+	HWND hWnd;
 public:
 	window(int width,int height,int console);
 	~window();
