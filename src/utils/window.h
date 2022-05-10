@@ -22,8 +22,23 @@ private:
 	* @brief 初始化窗口
 	*/
 	void init_window(int console);
+	/**
+	 * @brief 帧画面
+	*/
+	IMAGE* _frame;
 public:
 	window(int width,int height,int console);
+	~window();
+
+	/**
+	 * @brief 开始绘制新的帧 
+	*/
+	void start_frame();
+
+	/**
+	 * @brief 渲染帧到屏幕
+	*/
+	void show_frame();
 
 	/**
 	* @brief 获取窗口宽度

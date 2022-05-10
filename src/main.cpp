@@ -73,16 +73,16 @@ int main(int argc, char** argv) {
 		{0, 30, 0} }, 'y');
 	
 	cuboid grid;//地的网格
-	for (int x = -30; x <= 30; x+=5) {
-		for (int y = -30; y <= 30; y+=5) {
+	for (int x = -100; x <= 100; x+=20) {
+		for (int y = -100; y <= 100; y+=20) {
 			Eigen::Matrix<double, 3, 1> v1(
 				 x,y ,0);
 			Eigen::Matrix<double, 3, 1> v2(
-				x+5,y,0 );
+				x+20,y,0 );
 			Eigen::Matrix<double, 3, 1> v3(
-				x+5,y+5,0 );
+				x+20,y+20,0 );
 			Eigen::Matrix<double, 3, 1> v4(
-				x,y+5,0);
+				x,y+20,0);
 			std::vector<Eigen::Matrix<double, 3, 1>> ves{v1, v2, v3, v4};
 			Model block(ves, ' ');
 			grid.push_back(block);
@@ -99,10 +99,7 @@ int main(int argc, char** argv) {
 	Eigen::Matrix<double, 3, 3> camera_realtime=m_camera.trans(0,0,0);//此时的实时相机参数
 
 	while (1) {
-		x_angle+=1, y_angle+=2, z_angle+=3;
-		if (x_angle > 360)x_angle = -150;
-		if (y_angle > 360)y_angle = -150;
-		if (z_angle > 360)z_angle = -150;
+		m_window.start_frame();//开始制作新的帧
 		camera_realtime = m_camera.trans(x_angle, y_angle, z_angle);
 		//渲染地面
 		m_window.set_fillcolor(200, 200, 200);
@@ -150,7 +147,12 @@ int main(int argc, char** argv) {
 				last_x = message.x;
 				last_y = message.y;
 				if (fabs(dx) < 10 && fabs(dy) < 10) {
-					x_angle = ((int)x_angle - dy) % 360, y_angle = ((int)y_angle - dx) % 360, z_angle += 0;
+					if (((int)x_angle - dy) % 360 < 88 && ((int)x_angle - dy) % 360 >-10) {
+						x_angle = ((int)x_angle - dy) % 360;
+					}
+					if (((int)y_angle - dx) % 360<66 && ((int)y_angle - dx) % 360>-66) {
+						y_angle = ((int)y_angle - dx) % 360;
+					}
 				}
 				//相机进行变换
 				camera_realtime = m_camera.trans(x_angle, y_angle, z_angle);//调整相机参数
@@ -162,13 +164,13 @@ int main(int argc, char** argv) {
 				}
 				else {//调整缩放参数缩放
 					double dz = message.wheel / 4.;//一次滚轮120
-					m_camera.dz += dz;
+					m_camera.dz += dz;//深度调整
 					dz = fabs(message.wheel / 960.);
 					if (message.wheel < 0 && (last_resize - dz)>0.01) {//变小
-						last_resize = last_resize - dz;
+						last_resize = last_resize - dz;//缩放系数调整
 					}
 					else if (last_resize + dz < 15) {//变大
-						last_resize = last_resize + dz;
+						last_resize = last_resize + dz;//缩放系数调整
 					}
 				}
 				//相机进行变换
@@ -180,9 +182,8 @@ int main(int argc, char** argv) {
 			_stprintf_s(s, _T("x_angle %.3lf y_angle %.3lf z_angle %.3lf resize %.3lf "),x_angle,y_angle,z_angle,last_resize);
 			drawtext(s, & r, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 		}
-
-		m_window.sleep(50);//睡眠
-		m_window.clear();//清屏
+		m_window.show_frame();//将新的帧渲染到屏幕
+		m_window.sleep(10);//睡眠
 	}
 	return 0;
 }

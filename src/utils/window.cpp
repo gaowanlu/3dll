@@ -1,5 +1,6 @@
 #include "window.h"
 window::window(int width,int height,int console) {
+	_frame = new IMAGE(width,height);
 	if (width <= 0 || height <= 0) {
 		throw "window can not width or height equals 0";
 	}
@@ -8,7 +9,23 @@ window::window(int width,int height,int console) {
 	_world_base << 1., 0., 0., 0., 1., 0., 0., 0., 1.;
 	init_window(console);
 }
+window::~window() {
+	if (this->_frame) {
+		delete _frame;
+	}
+}
 
+void window::start_frame() {
+	SetWorkingImage(this->_frame);
+	this->clear();//画布
+}
+
+void window::show_frame() {
+	SetWorkingImage();
+	if (_frame) {
+		putimage(0, 0, _frame);
+	}
+}
 
 void window::init_window(int console) {
 	//建立窗口
@@ -64,9 +81,9 @@ Eigen::Matrix<double, 3, 1> window::to_xy(double x, double y, double z,camera m_
 }
 
 void window::draw_t_line(Eigen::Matrix<double, 3, 1> dot1, Eigen::Matrix<double, 3, 1> dot2) {
-	if (dot1(2) > 0 && dot2(2) > 0) {//向有一个向量在相机前面时才进行显示此连线
-		line(dot1(0), dot1(1), dot2(0), dot2(1));
-	}
+	//if (dot1(2) > 0 && dot2(2) > 0) {//向有一个向量在相机前面时才进行显示此连线
+	line(dot1(0), dot1(1), dot2(0), dot2(1));
+	//}
 }
 
 void window::clear() {
@@ -98,10 +115,10 @@ void window::render_model(Model m_model,double resize,camera m_camera, Eigen::Ma
 			//将x y投到屏幕上，变换到图像坐标系
 			Eigen::Matrix<double, 3, 1> window_dot1 = this->to_xy(dot1_realtime(0), dot1_realtime(1), dot1_realtime(2), m_camera);
 			Eigen::Matrix<double, 3, 1> window_dot2 = this->to_xy(dot2_realtime(0), dot2_realtime(1), dot2_realtime(2), m_camera);
-			if (window_dot1(2)>=m_camera.dz||window_dot2(2)>=m_camera.dz) {
-				//画出向量1到向量2的连线
-				this->draw_t_line(window_dot1, window_dot2);
-			}
+			//if (window_dot1(2)>=m_camera.dz||window_dot2(2)>=m_camera.dz) {
+			//画出向量1到向量2的连线
+			this->draw_t_line(window_dot1, window_dot2);
+			//}
 		}
 	}
 }
@@ -117,9 +134,9 @@ void window::render_cuboid(cuboid& _cuboid, double resize, camera m_camera, Eige
 			//相机角度的进行缩放,缩放要在相机坐标系下缩放，在不同基下的缩放变换是不等价的，要从相似矩阵原理触发
 			dot_realtime = dot_realtime * resize;
 			Eigen::Matrix<double, 3, 1> window_dot = this->to_xy(dot_realtime(0), dot_realtime(1), dot_realtime(2), m_camera);
-			if (window_dot(2) > m_camera.dz) {//此点在相机背后
-				render = true;
-			}
+			//if (window_dot(2) > m_camera.dz) {//此点在相机背后
+			render = true;
+			//}
 			dots.push_back(std::vector<int>{ (int)window_dot(0), (int)window_dot(1) });
 		}
 		//不全部在相机后则渲染
@@ -130,7 +147,7 @@ void window::render_cuboid(cuboid& _cuboid, double resize, camera m_camera, Eige
 				{dots[2][0],dots[2][1]},
 				{dots[3][0],dots[3][1]},
 				{dots[4][0],dots[4][1]} };
-			fillpolygon(pts, 5);
+			polygon(pts, 5);
 		}
 	}
 }
