@@ -133,12 +133,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\gaowanlu\Desktop\MyProject\3dll\3dll\Project1\include;C:\Users\gaowanlu\Desktop\MyProject\3dll\3dll\Project1\include\eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\gaowanlu\Desktop\MyProject\3dll\include;C:\Users\gaowanlu\Desktop\MyProject\3dll\include\eigen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\gaowanlu\Desktop\MyProject\3dll\3dll\Project1\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\gaowanlu\Desktop\MyProject\3dll\lib\x64</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

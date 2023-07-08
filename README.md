@@ -38,6 +38,16 @@ git clone https://hub.fastgit.xyz/gaowanlu/3dll.git
 或在Github [https://github/gaowanlu/3dll](https://github/gaowanlu/3dll)、获取最新的工程效果  
 
 请使用Visual Studio 2022 打开项目  ，或者自己使用其他IDE进行构建  
+
+环境搭建打开sln文件
+
+请使用Visual Studio 2022 打开项目 ，或者自己使用其他IDE进行构建
+
+项目 =》属性 =》C/C++ =》常规添加本项目的include文件夹路径到附加包含目录属性
+
+项目 =》属性 =》链接器 =》将本项目的lib/x64文件夹路径添加附加库目录
+
+注意设置上面步骤时，尽量选择 配置：所有配置 平台：x64 Release、以免新手怎么弄都跑不起来
   
 ## 线性代数
 
