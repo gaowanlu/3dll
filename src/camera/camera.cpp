@@ -5,6 +5,9 @@ camera::camera() {
 }
 
 Eigen::Matrix<double, 3, 3> camera::trans(double x_angle, double y_angle, double z_angle) {
+	angle_x = x_angle;
+	angle_y = y_angle;
+	angle_z = z_angle;
 	return utils::roate_x(x_angle) * utils::roate_y(y_angle) * utils::roate_z(z_angle) * _camera;
 }
 

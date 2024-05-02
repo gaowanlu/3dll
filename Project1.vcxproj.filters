@@ -39,6 +39,9 @@
     <ClCompile Include="src\model\cuboid.cpp">
       <Filter>源文件\model</Filter>
     </ClCompile>
+    <ClCompile Include="main.cp.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\camera\camera.h">

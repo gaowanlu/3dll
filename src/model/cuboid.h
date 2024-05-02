@@ -5,7 +5,8 @@
 #include <vector>
 #include "model.h"
 
-class cuboid {
+class cuboid
+{
 private:
 public:
 	cuboid();

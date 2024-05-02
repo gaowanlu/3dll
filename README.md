@@ -19,13 +19,12 @@
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/26d90f5c9fd5406a8a4c4029353f81e9.png#pic_center)
 
 
-
-3、鼠标点击且移动鼠标进行x与y轴的旋转、Ctrl+滚轮 支持z轴旋转
+3、使用 Q A W S E D 平移
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/f951e4aed6c342a596c64cdd4d55d9ff.png#pic_center)
 
 
-4、滚轮对为相机位置向量进行放缩
+4、使用 R F T G Y H 旋转
 
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/957d1133dfbf4405885b0a7e336588aa.png#pic_center)
 
