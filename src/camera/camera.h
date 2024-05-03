@@ -3,6 +3,7 @@
 #define __CAMERA_H__
 #include <Eigen/Dense>
 #include "../utils/utils.h"
+
 class camera
 {
 private:

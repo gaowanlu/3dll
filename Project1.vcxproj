@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cp.cpp" />
     <ClCompile Include="src\camera\camera.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\model\cuboid.cpp" />

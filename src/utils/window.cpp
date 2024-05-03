@@ -1,4 +1,5 @@
 #include "window.h"
+
 window::window(int width, int height, int console)
 {
 	_frame = new IMAGE(width, height);
@@ -93,39 +94,20 @@ Eigen::Matrix<double, 3, 3> window::get_world_base()
 
 Eigen::Matrix<double, 3, 1> window::to_xy(double x, double y, double z, camera m_camera)
 {
-	// 将点x y z 投到
+	// 将点x y z 投到屏幕
+	double real_x = x;
+	double real_y = y; // 相机朝向y
+	double real_z = z;
+	real_x += get_width() / 2.;
+	real_z = -real_z;
+	real_z += get_height() / 2.;
 
-	// 计算相机到目标的举例
-	// double distance = sqrt(fabs(x) * fabs(x) + fabs(y) * fabs(y) + fabs(z) * fabs(z));
-	////std::cout << distance << std::endl;
-	// double dot_size = 5;
-	// double resize = 10;//400/fabs(z)
-	// x += m_camera.dx;
-	// y += m_camera.dy;
-	////z += m_camera.dz;
-	// x *= resize;//缩放因数
-	// y *= resize;
-	// z *= resize;
-	// if (y < 0) {
-	//	y = -y + (_height / 2.);
-	// }
-	// else {
-	//	y = (_height / 2.) - y;
-	// }
-	// if (x > 0) {
-	//	x += _width / 2;
-	// }
-	// else {
-	//	x = _width / 2 + x;
-	// }
-	return Eigen::Matrix<double, 3, 1>(x, y, z);
+	return Eigen::Matrix<double, 3, 1>(real_x, real_y, real_z);
 }
 
 void window::draw_t_line(Eigen::Matrix<double, 3, 1> dot1, Eigen::Matrix<double, 3, 1> dot2)
 {
-	// if (dot1(2) > 0 && dot2(2) > 0) {//向有一个向量在相机前面时才进行显示此连线
-	line(dot1(0), getheight() - dot1(2), dot2(0), getheight() - dot2(2));
-	//}
+	line(dot1(0), dot1(2), dot2(0), dot2(2));
 }
 
 void window::clear()
@@ -156,9 +138,12 @@ void window::render_model(Model m_model, double resize, camera m_camera, Eigen::
 		Eigen::Matrix<double, 3, 1> window_dot2;
 
 		Eigen::Matrix<double, 3, 1> dot = model[i];												// 获得模型的向量1
-		Eigen::Matrix<double, 3, 1> dot1_realtime = camera_realtime.inverse() * dot;			// 先旋转
-		dot1_realtime += Eigen::Matrix<double, 3, 1>{-m_camera.dx, -m_camera.dy, -m_camera.dz}; // 再平移
-		needShow = dot1_realtime(1) > 0;
+		Eigen::Matrix<double, 3, 1> dot1_realtime = dot;
+		// 旋转
+		dot1_realtime = camera_realtime.inverse() * dot1_realtime;
+		dot1_realtime -= Eigen::Matrix<double, 3, 1>{m_camera.dx, m_camera.dy, m_camera.dz}; // 再平移
+
+		// needShow = dot1_realtime(1) >= 0;
 
 		if (needShow)
 		{
@@ -166,10 +151,11 @@ void window::render_model(Model m_model, double resize, camera m_camera, Eigen::
 			for (std::size_t j = 0; j < model.size(); j++)
 			{
 				Eigen::Matrix<double, 3, 1> dot = model[j];
-				// 先旋转
-				Eigen::Matrix<double, 3, 1> dot2_realtime = camera_realtime.inverse() * dot;
-				dot2_realtime += Eigen::Matrix<double, 3, 1>{-m_camera.dx, -m_camera.dy, -m_camera.dz};
-				needShow = dot2_realtime(1) > 0;
+				Eigen::Matrix<double, 3, 1> dot2_realtime = dot;
+
+				dot2_realtime = camera_realtime.inverse() * dot2_realtime;
+				dot2_realtime -= Eigen::Matrix<double, 3, 1>{m_camera.dx, m_camera.dy, m_camera.dz};
+				// needShow = dot2_realtime(1) >= 0;
 				if (needShow)
 				{
 					window_dot1 = this->to_xy(dot1_realtime(0), dot1_realtime(1), dot1_realtime(2), m_camera);
@@ -201,21 +187,19 @@ void window::render_cuboid(cuboid &_cuboid, double resize, camera m_camera, Eige
 			double dotz = vec[j % vec.size()].z();
 
 			Eigen::Vector3d vRes{dotx, doty, dotz};
-
-			// 先旋转再平移
-			vRes = camera_realtime.inverse() * vRes; // 将世界空间中的内容和相机相反旋转 因为相机向某个方向旋转等价于相机不懂 物体反操作旋转
+			vRes = camera_realtime.inverse() * vRes;
 			// 平移
 			vRes = {vRes.x() - m_camera.dx, vRes.y() - m_camera.dy, vRes.z() - m_camera.dz}; // 将相机直立坐标系对象移到世界坐标系
 
 			if (vRes.y() < 0)
 			{
-				needShow = false;
-				break;
+				// needShow = false;
+				// break;
 			}
 			// 缩放
 			vRes = vRes * resize;
 			Eigen::Matrix<double, 3, 1> window_dot = this->to_xy(vRes(0), vRes(1), vRes(2), m_camera);
-			dots.push_back(std::vector<int>{(int)window_dot(0), get_height() - (int)window_dot(2)});
+			dots.push_back(std::vector<int>{(int)window_dot(0),(int)window_dot(2)});
 		}
 		if (needShow)
 		{

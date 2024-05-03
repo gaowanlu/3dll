@@ -15,7 +15,7 @@
 /**
  * @brief 全局窗口
  */
-window m_window(800, 600, 1);
+window m_window(1920, 1080, 1);
 
 int main(int argc, char **argv)
 {
@@ -65,13 +65,13 @@ int main(int argc, char **argv)
 
 	// 用线显示下世界坐标系原点的X-Y-Z轴
 	Model model_z({{0, 0, 0},
-				   {0, 0, 70}},
+				   {0, 0, 500}},
 				  'z');
 	Model model_x({{0, 0, 0},
-				   {30, 0, 0}},
+				   {500, 0, 0}},
 				  'x');
 	Model model_y({{0, 0, 0},
-				   {0, 30, 0}},
+				   {0, 500, 0}},
 				  'y');
 
 	// 将世界坐标系的X-Y平面画出网格，以便于能够看到平面
@@ -116,26 +116,24 @@ int main(int argc, char **argv)
 		// 渲染x y z轴
 		m_window.set_linecolor(255, 0, 0);
 		m_window.render_model(model_x, last_resize, m_camera, camera_realtime);
+
+		m_window.set_linecolor(0, 255, 0);
 		m_window.render_model(model_y, last_resize, m_camera, camera_realtime);
+
+		m_window.set_linecolor(0, 0, 255);
 		m_window.render_model(model_z, last_resize, m_camera, camera_realtime);
 
 		// 相机
 		{
 			m_window.set_linecolor(0, 255, 0);
 			std::vector<Eigen::Vector3d> camera_local_point;
-			Eigen::Vector3d camera_x{200, 0, 0};
-			camera_x = m_camera.trans(m_camera.angle_x, m_camera.angle_y, m_camera.angle_z) * camera_x;
-			camera_x += Eigen::Vector3d{m_camera.dx, m_camera.dy, m_camera.dz};
+			Eigen::Vector3d camera_x{m_camera.dx + 500, m_camera.dy, m_camera.dz};
 			camera_local_point.push_back(camera_x);
 
-			// Eigen::Vector3d camera_y{ 0,200,0 };
-			// camera_y = m_camera.trans(m_camera.angle_x, m_camera.angle_y, m_camera.angle_z) * camera_y;
-			// camera_y += Eigen::Vector3d{ m_camera.dx, m_camera.dy, m_camera.dz };
-			// camera_local_point.push_back(camera_y);
+			Eigen::Vector3d camera_y{ m_camera.dx, m_camera.dy + 500, m_camera.dz};
+			camera_local_point.push_back(camera_y);
 
-			Eigen::Vector3d camera_z{0, 0, 200};
-			camera_z = m_camera.trans(m_camera.angle_x, m_camera.angle_y, m_camera.angle_z) * camera_z;
-			camera_z += Eigen::Vector3d{m_camera.dx, m_camera.dy, m_camera.dz};
+			Eigen::Vector3d camera_z{ m_camera.dx, m_camera.dy, m_camera.dz + 500};
 			camera_local_point.push_back(camera_z);
 
 			for (int i = 0; i < camera_local_point.size(); i++)

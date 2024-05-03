@@ -1,4 +1,5 @@
 #include "model.h"
+
 Model::Model(const std::vector<std::vector<double>> vecs)
 {
 	for (auto &vec : vecs)

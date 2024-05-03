@@ -1,5 +1,6 @@
 #include"camera.h"
 #include<iostream>
+
 camera::camera() {
 	_camera << 1., 0., 0., 0., 1., 0., 0., 0., 1.;
 }
