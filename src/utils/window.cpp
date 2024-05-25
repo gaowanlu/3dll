@@ -139,11 +139,14 @@ void window::render_model(Model m_model, double resize, camera m_camera, Eigen::
 
 		Eigen::Matrix<double, 3, 1> dot = model[i];												// 获得模型的向量1
 		Eigen::Matrix<double, 3, 1> dot1_realtime = dot;
-		// 旋转
-		dot1_realtime = camera_realtime.inverse() * dot1_realtime;
-		dot1_realtime -= Eigen::Matrix<double, 3, 1>{m_camera.dx, m_camera.dy, m_camera.dz}; // 再平移
 
-		// needShow = dot1_realtime(1) >= 0;
+		// 将物品移动到相机的直立坐标系中
+		dot1_realtime -= Eigen::Matrix<double, 3, 1>{m_camera.dx, m_camera.dy, m_camera.dz};
+
+		// 将物体进行相机相反角度旋转基于相机直立坐标系的轴
+		dot1_realtime = camera_realtime.inverse() * dot1_realtime;
+
+		needShow = dot1_realtime(1) > 0;
 
 		if (needShow)
 		{
@@ -153,9 +156,9 @@ void window::render_model(Model m_model, double resize, camera m_camera, Eigen::
 				Eigen::Matrix<double, 3, 1> dot = model[j];
 				Eigen::Matrix<double, 3, 1> dot2_realtime = dot;
 
-				dot2_realtime = camera_realtime.inverse() * dot2_realtime;
 				dot2_realtime -= Eigen::Matrix<double, 3, 1>{m_camera.dx, m_camera.dy, m_camera.dz};
-				// needShow = dot2_realtime(1) >= 0;
+				dot2_realtime = camera_realtime.inverse() * dot2_realtime;
+				needShow = dot2_realtime(1) >= 0;
 				if (needShow)
 				{
 					window_dot1 = this->to_xy(dot1_realtime(0), dot1_realtime(1), dot1_realtime(2), m_camera);
@@ -187,14 +190,14 @@ void window::render_cuboid(cuboid &_cuboid, double resize, camera m_camera, Eige
 			double dotz = vec[j % vec.size()].z();
 
 			Eigen::Vector3d vRes{dotx, doty, dotz};
+
+			vRes = { vRes.x() - m_camera.dx, vRes.y() - m_camera.dy, vRes.z() - m_camera.dz };
 			vRes = camera_realtime.inverse() * vRes;
-			// 平移
-			vRes = {vRes.x() - m_camera.dx, vRes.y() - m_camera.dy, vRes.z() - m_camera.dz}; // 将相机直立坐标系对象移到世界坐标系
 
 			if (vRes.y() < 0)
 			{
-				// needShow = false;
-				// break;
+				needShow = false;
+				break;
 			}
 			// 缩放
 			vRes = vRes * resize;
