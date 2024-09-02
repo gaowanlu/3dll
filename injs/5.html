@@ -8,10 +8,14 @@
 </head>
 
 <body>
-    <p>简单光线追踪 漫反射</p>
+    <p>简单光线追踪 阴影</p>
     <div class class="centered">
         <canvas id="canvas" width=800 height=800 style="border:1px grey solid"></canvas>
     </div>
+    <input type="radio" id="eps-0" name="shadow-ray-start" onClick="SetShadowEpsilon(0);">
+    <label for='eps-0'>Zero</label><br>
+    <input type="radio" id="eps-e" name="shadow-ray-start" onClick="SetShadowEpsilon(0.001);" checked>
+    <label for='eps-e'>Epsilon</label>
 </body>
 
 <script>
@@ -57,6 +61,11 @@
     // 将buffer内容更新到画布上
     function UpdateCanvas() {
         canvas_context.putImageData(canvas_buffer, 0, 0);
+    }
+
+    // 清除画布内容
+    function ClearAll() {
+        canvas.width = canvas.width;
     }
 
     // 构造向量对象
@@ -106,11 +115,12 @@
     Light.DIRECTIONAL = 2; // 方向光
 
     // 场景设置
-    const VIEWPORT_SIZE_X = 1; // 视口大小
-    const VIEWPORT_SIZE_Y = 1;
+    let EPSILON = 0.001; // 一个无限靠近0的实数
+    const VIEWPORT_SIZE_X = 2; // 视口大小
+    const VIEWPORT_SIZE_Y = 2;
     const PROJECTION_PLANE_Z = 1; // 视口距离相机的距离 相机朝向+z
     const CAMERA_POSITION = new Vec(0, 0, 0); // 相机位置
-    const BACKGROUND_COLOR = new Color(255, 255, 255); // 画布背景颜色
+    const BACKGROUND_COLOR = new Color(0, 0, 0); // 画布背景颜色
 
     // 球体
     const spheres = [
@@ -181,11 +191,19 @@
                 continue;
             }
 
-            let vec_l;
+            let vec_l, t_max; // vec_l 为场景点P到光源向量 t_max为阴影检测最大范围
             if (light.ltype == Light.POINT) {
                 vec_l = light.position.sub(point);
+                t_max = 1.0; // 点光则阴影最大检查点P到光源即1
             } else { // Light.DIRECTIONAL
                 vec_l = light.position;
+                t_max = Infinity; // 方向光则阴影最大检查点P到光源即无限远
+            }
+
+            // 阴影检测
+            let blocker = ClosestIntersection(point, vec_l, EPSILON, t_max);
+            if (blocker) {
+                continue; // 光源到点P之间有物体
             }
 
             // 漫反射
@@ -207,8 +225,8 @@
         return intensity;
     }
 
-    // 从原点朝direction射出射线
-    function TraceRay(origin, direction, min_t, max_t) {
+    // 找从点origin到方向direction发出射线最先相交的球 射线检测范围min_t到max_t
+    function ClosestIntersection(origin, direction, min_t, max_t) {
         let closest_t = Infinity; // 最近距离
         let closest_sphere = null; // 最近的球体
 
@@ -228,9 +246,20 @@
 
         // 射线没和任何球体相交则返回背景色
         if (closest_sphere == null) {
+            return null;
+        }
+        return [closest_sphere, closest_t];
+    }
+
+    // 从原点朝direction射出射线
+    function TraceRay(origin, direction, min_t, max_t) {
+        // 找从相机到视口发出射线最先相交的球
+        let intersection = ClosestIntersection(origin, direction, min_t, max_t);
+        if (!intersection) { // 无解则返回背景色
             return BACKGROUND_COLOR;
         }
-
+        let closest_sphere = intersection[0]; // 最先相交的球体
+        let closest_t = intersection[1]; // 最先相交点P的长度 用direction倍数表示
         let point = origin.add(direction.mul(closest_t)); // 射线与场景球体表面交点P
         let normal = point.sub(closest_sphere.center); // 球体表面点P的法线
         normal = normal.mul(1.0 / normal.length()); // 归一化
@@ -242,14 +271,14 @@
         return closest_sphere.color.mul(lighting); // 光越强颜色倍数越高
     }
 
-    (() => {
-        for (let i = 0; i < spheres.length; i++) {
-            let sphere = spheres[i];
-            sphere.move_count = 0;
-            sphere.move_d = 0.1;
-        }
+    function SetShadowEpsilon(epsilon) {
+        EPSILON = epsilon;
+        Render();
+    }
 
-        setInterval(() => {
+    function Render() {
+        ClearAll();
+        setTimeout(() => {
             // 从相机位置朝向视口平面上的每个点发出射线 追踪从哪里射进来光源
             for (let x = -canvas.width / 2; x < canvas.width / 2; x++) {
                 for (let y = -canvas.height / 2; y < canvas.height / 2; y++) {
@@ -258,24 +287,12 @@
                     PutPixel(x, y, color);
                 }
             }
-
             UpdateCanvas(); // 刷新缓冲到画布
+        }, 0);
+    }
 
-            for (let i = 0; i < spheres.length; i++) {
-                let sphere = spheres[i];
-                sphere.center.x += sphere.move_d;
-                sphere.center.y += sphere.move_d;
-                sphere.move_count++;
-                if (sphere.move_count >= 10) {
-                    sphere.move_count = 0;
-                    sphere.move_d = - sphere.move_d;
-                }
-            }
+    Render();
 
-            // lights[2].position.x -= 1;
-            // lights[2].position.y -= 1;
-        }, 1);
-    })();
 
 </script>
 
