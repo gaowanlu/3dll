@@ -233,7 +233,7 @@
         // 从相机位置朝向视口平面上的每个点发出射线 追踪从哪里射进来光源
         for (let x = -canvas.width / 2; x < canvas.width / 2; x++) {
             for (let y = -canvas.height / 2; y < canvas.height / 2; y++) {
-                let direction = CanvasToViewport(x, y).sub(CAMERA_POSITION);
+                let direction = CanvasToViewport(x, y);
                 let color = TraceRay(CAMERA_POSITION, direction, Math.sqrt(direction.dot(direction)), Infinity); // 1到无限远
                 PutPixel(x, y, color);
             }

@@ -8,7 +8,7 @@
 </head>
 
 <body>
-    <p>简单光线追踪 阴影</p>
+    <p>简单光线追踪 任意相机位置</p>
     <div class class="centered">
         <canvas id="canvas" width=800 height=800 style="border:1px grey solid"></canvas>
     </div>
@@ -16,6 +16,8 @@
     <label for='eps-0'>Zero</label><br>
     <input type="radio" id="eps-e" name="shadow-ray-start" onClick="SetShadowEpsilon(0.001);" checked>
     <label for='eps-e'>Epsilon</label>
+    <br>
+    <input type="number" id="rec-limit" onchange="UpdateRecursionLimit();" min="0" max="5" witdh="3" value="3">
 </body>
 
 <script>
@@ -32,6 +34,9 @@
             r, g, b,
             mul(n) {
                 return new Color(this.r * n, this.g * n, this.b * n);
+            },
+            add(color) {
+                return new Color(this.r + color.r, this.g + color.g, this.b + color.b)
             }
         };
     }
@@ -95,13 +100,31 @@
         };
     }
 
+    // 求 v1相对v2的反射向量 v2必须为单位向量
+    function ReflectRay(v1, v2) {
+        return v2.mul(2 * v1.dot(v2)).sub(v1);
+    }
+
+    // 矩阵乘向量
+    function MultiplyMV(mat, vec) {
+        let result = [0, 0, 0];
+        vec = [vec.x, vec.y, vec.z];
+        for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+                result[i] += vec[j] * mat[i][j];
+            }
+        }
+        return new Vec(result[0], result[1], result[2]);
+    }
+
     // 球体对象
-    function Sphere(center, radius, color, specular) {
+    function Sphere(center, radius, color, specular, reflective) {
         return {
             center, // 球心
             radius, // 半径
             color, // 颜色
-            specular // 镜面反射指数
+            specular, // 镜面反射指数 会形成光泽 可以区分哑光与镜面材质
+            reflective // 表面反射程度
         };
     }
 
@@ -116,25 +139,31 @@
 
     // 场景设置
     let EPSILON = 0.001; // 一个无限靠近0的实数
-    const VIEWPORT_SIZE_X = 2; // 视口大小
-    const VIEWPORT_SIZE_Y = 2;
+    let RECURSION_DEPTH = 3; // 反射递归深度
+    const VIEWPORT_SIZE_X = 1; // 视口大小
+    const VIEWPORT_SIZE_Y = 1
     const PROJECTION_PLANE_Z = 1; // 视口距离相机的距离 相机朝向+z
-    const CAMERA_POSITION = new Vec(0, 0, 0); // 相机位置
+    const CAMERA_POSITION = new Vec(3, 0, 1); // 相机位置
+    const CAMERA_ROTATION = [
+        [0.7071, 0, -0.7071],
+        [0, 1, 0],
+        [0.7071, 0, 0.7071]
+    ];
     const BACKGROUND_COLOR = new Color(0, 0, 0); // 画布背景颜色
 
     // 球体
     const spheres = [
-        new Sphere(new Vec(0, -1, 3), 1, new Color(255, 0, 0), 2000),
-        new Sphere(new Vec(-2, 0, 4), 1, new Color(0, 255, 0), 5000),
-        new Sphere(new Vec(2, 0, 4), 1, new Color(0, 0, 255), 5000),
-        new Sphere(new Vec(0, -5001, 0), 5000, new Color(255, 255, 0), 1000)
+        new Sphere(new Vec(0, -1, 3), 1, new Color(255, 0, 0), 500, 0.2),
+        new Sphere(new Vec(-2, 0, 4), 1, new Color(0, 255, 0), 10, 0.4),
+        new Sphere(new Vec(2, 0, 4), 1, new Color(0, 0, 255), 500, 0.3),
+        new Sphere(new Vec(0, -5001, 0), 5000, new Color(255, 255, 0), 1000, 0.5)
     ];
 
     // 场景光源
     let lights = [
-        new Light(Light.AMBIENT, 0.2), // 场景光
-        new Light(Light.POINT, 0.6, new Vec(2, 1, 0)),
-        new Light(Light.DIRECTIONAL, 0.2, new Vec(1, 4, 4))
+        new Light(Light.AMBIENT, 0.1), // 场景光
+        new Light(Light.POINT, 0.8, new Vec(2, 1, 0)),
+        new Light(Light.DIRECTIONAL, 0.4, new Vec(1, 4, 4))
     ];
 
     // 画布坐标到视口坐标的转换
@@ -252,28 +281,56 @@
     }
 
     // 从原点朝direction射出射线
-    function TraceRay(origin, direction, min_t, max_t) {
+    function TraceRay(origin, direction, min_t, max_t, depth) {
         // 找从相机到视口发出射线最先相交的球
         let intersection = ClosestIntersection(origin, direction, min_t, max_t);
         if (!intersection) { // 无解则返回背景色
             return BACKGROUND_COLOR;
         }
+
         let closest_sphere = intersection[0]; // 最先相交的球体
         let closest_t = intersection[1]; // 最先相交点P的长度 用direction倍数表示
+
         let point = origin.add(direction.mul(closest_t)); // 射线与场景球体表面交点P
         let normal = point.sub(closest_sphere.center); // 球体表面点P的法线
         normal = normal.mul(1.0 / normal.length()); // 归一化
 
         let view = direction.mul(-1); // V与射线方向相反
         let lighting = ComputeLighting(point, normal, view, closest_sphere.specular);
+        let point_local_color = closest_sphere.color.mul(lighting); // 点P本身颜色
 
-        // 否则返回球体颜色
-        return closest_sphere.color.mul(lighting); // 光越强颜色倍数越高
+        if (closest_sphere.reflective <= 0 || depth <= 0) { // 递归出口
+            return point_local_color; // 球材质不参与反射
+        }
+
+        let reflected_ray = ReflectRay(view, normal); // view根据normal的对称向量
+        let reflected_color = TraceRay(point, reflected_ray, EPSILON, Infinity, depth - 1);
+        // 相当于相机在P点朝向view反向的反射方向再次光线追踪
+
+        let local_contribution = point_local_color.mul(1 - closest_sphere.reflective); // P点本身的部分
+        let reflected_contribution = reflected_color.mul(closest_sphere.reflective); // 反射到P点的部分
+
+        return local_contribution.add(reflected_contribution);
     }
 
     function SetShadowEpsilon(epsilon) {
         EPSILON = epsilon;
         Render();
+    }
+
+    function UpdateRecursionLimit() {
+        let v = document.getElementById("rec-limit").value | 0; // 取整
+        if (v < 0) {
+            v = 0;
+        }
+        if (v > 5) {
+            v = 5;
+        }
+        document.getElementById("rec-limit").value = v;
+        if (RECURSION_DEPTH != v) {
+            RECURSION_DEPTH = v;
+            Render();
+        }
     }
 
     function Render() {
@@ -283,7 +340,12 @@
             for (let x = -canvas.width / 2; x < canvas.width / 2; x++) {
                 for (let y = -canvas.height / 2; y < canvas.height / 2; y++) {
                     let direction = CanvasToViewport(x, y);
-                    let color = TraceRay(CAMERA_POSITION, direction, Math.sqrt(direction.dot(direction)), Infinity); // 1到无限远
+                    direction = MultiplyMV(CAMERA_ROTATION, direction);
+                    let color = TraceRay(CAMERA_POSITION,
+                        direction,
+                        Math.sqrt(direction.dot(direction)),
+                        Infinity,
+                        RECURSION_DEPTH); // 1到无限远
                     PutPixel(x, y, color);
                 }
             }
