@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>光栅化 直线插值</title>
+</head>
+
+<body>
+    <div class="centered">
+        <canvas id="canvas" width=600 height=600 style="border: 1px grey solid"></canvas>
+    </div>
+
+    <script>
+        "use strict";
+
+        let canvas = document.getElementById("canvas");
+        let canvas_context = canvas.getContext("2d");
+        let canvas_buffer = canvas_context.getImageData(0, 0, canvas.width, canvas.height);
+
+        // 创建Color对象
+        function Color(r, g, b) {
+            return { r, g, b };
+        }
+
+        // 画像素点
+        function PutPixel(x, y, color) {
+            x = canvas.width / 2 + (x | 0);
+            y = canvas.height / 2 - (y | 0) - 1;
+
+            if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) {
+                return;
+            }
+
+            let offset = 4 * (x + canvas_buffer.width * y);
+            canvas_buffer.data[offset++] = color.r;
+            canvas_buffer.data[offset++] = color.g;
+            canvas_buffer.data[offset++] = color.b;
+            canvas_buffer.data[offset++] = 255; // Alpha = 255 (full opacity)
+        }
+
+
+        // 将缓冲内容更新到画布显示
+        function UpdateCanvas() {
+            canvas_context.putImageData(canvas_buffer, 0, 0);
+        }
+
+        // 点对象
+        function Pt(x, y) {
+            return { x, y };
+        }
+
+
+        function Interpolate(i0, d0, i1, d1) {
+            if (i0 == i1) {
+                return [d0]; // 一个点的情况
+            }
+
+            let values = [];
+            let a = (d1 - d0) / (i1 - i0); // 斜率
+            let d = d0;
+            for (let i = i0; i <= i1; i++) {
+                values.push(d);
+                d += a;
+            }
+
+            return values;
+        }
+
+
+        function DrawLine(p0, p1, color) {
+            let dx = p1.x - p0.x, dy = p1.y - p0.y;
+
+            if (Math.abs(dx) > Math.abs(dy)) { // 更趋向于水平
+                // 即p1.x<p0.x
+                if (dx < 0) { let swap = p0; p0 = p1; p1 = swap; }
+
+                // Compute the Y values and draw.
+                let ys = Interpolate(p0.x, p0.y, p1.x, p1.y);
+
+                for (let x = p0.x; x <= p1.x; x++) {
+                    PutPixel(x, ys[(x - p0.x) | 0], color);
+                }
+
+            } else {
+                // The line is verical-ish. Make sure it's bottom to top.
+                if (dy < 0) { let swap = p0; p0 = p1; p1 = swap; }
+
+                // Compute the X values and draw.
+                let xs = Interpolate(p0.y, p0.x, p1.y, p1.x);
+                for (let y = p0.y; y <= p1.y; y++) {
+                    PutPixel(xs[(y - p0.y) | 0], y, color);
+                }
+            }
+        }
+
+        DrawLine(new Pt(-200, -100), new Pt(240, 120), new Color(0, 0, 0));
+        DrawLine(new Pt(-50, -200), new Pt(60, 240), new Color(0, 0, 0));
+        DrawLine(new Pt(60, -200), new Pt(60, 240), new Color(255, 0, 0));
+        DrawLine(new Pt(-160, 240), new Pt(60, 240), new Color(0, 255, 0));
+        DrawLine(new Pt(20, 20), new Pt(20, 20), new Color(0, 0, 255));
+
+        UpdateCanvas();
+
+    </script>
+
+</body>
+
+</html>
