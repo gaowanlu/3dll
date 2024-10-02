@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>光栅化渐变着色三角形</title>
+</head>
+
+<body>
+    <div class="centered">
+        <canvas id="canvas" width=600 height=600 style="border: 1px grey solid"></canvas>
+    </div>
+
+    <script>
+        "use strict";
+        let canvas = document.getElementById("canvas");
+        let canvas_context = canvas.getContext("2d");
+        let canvas_buffer = canvas_context.getImageData(0, 0, canvas.width, canvas.height);
+
+        // 颜色对象
+        function Color(r, g, b) {
+            return {
+                r, g, b,
+                mul: function (n) { return new Color(this.r * n, this.g * n, this.b * n); },
+            };
+        }
+
+        // 设置像素值到画布buffer
+        function PutPixel(x, y, color) {
+            x = canvas.width / 2 + (x | 0);
+            y = canvas.height / 2 - (y | 0) - 1;
+
+            if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) {
+                return;
+            }
+
+            let offset = 4 * (x + canvas_buffer.width * y);
+            canvas_buffer.data[offset++] = color.r;
+            canvas_buffer.data[offset++] = color.g;
+            canvas_buffer.data[offset++] = color.b;
+            canvas_buffer.data[offset++] = 255; // Alpha = 255 (full opacity)
+        }
+
+
+        // 将buffer内容刷到画布上
+        function UpdateCanvas() {
+            canvas_context.putImageData(canvas_buffer, 0, 0);
+        }
+
+        // 获得新的点对象
+        function Pt(x, y, h) {
+            return { x, y, h };
+        }
+
+        // 线性插值函数
+        function Interpolate(i0, d0, i1, d1) {
+            if (i0 == i1) {
+                return [d0];
+            }
+
+            let values = [];
+            let a = (d1 - d0) / (i1 - i0);
+            let d = d0;
+            for (let i = i0; i <= i1; i++) {
+                values.push(d);
+                d += a;
+            }
+
+            return values;
+        }
+
+
+        // 画点p0到点p1线段
+        function DrawLine(p0, p1, color) {
+            let dx = p1.x - p0.x, dy = p1.y - p0.y;
+
+            if (Math.abs(dx) > Math.abs(dy)) { // 偏向横着
+                // The line is horizontal-ish. Make sure it's left to right.
+                if (dx < 0) { let swap = p0; p0 = p1; p1 = swap; }
+
+                // Compute the Y values and draw.
+                let ys = Interpolate(p0.x, p0.y, p1.x, p1.y);
+                for (let x = p0.x; x <= p1.x; x++) {
+                    PutPixel(x, ys[(x - p0.x) | 0], color);
+                }
+            } else { // 偏向竖着
+                // The line is verical-ish. Make sure it's bottom to top.
+                if (dy < 0) { let swap = p0; p0 = p1; p1 = swap; }
+
+                // Compute the X values and draw.
+                let xs = Interpolate(p0.y, p0.x, p1.y, p1.x);
+                for (let y = p0.y; y <= p1.y; y++) {
+                    PutPixel(xs[(y - p0.y) | 0], y, color);
+                }
+            }
+        }
+
+
+        // 画三角形外框
+        function DrawWireframeTriangle(p0, p1, p2, color) {
+            DrawLine(p0, p1, color);
+            DrawLine(p1, p2, color);
+            DrawLine(p0, p2, color);
+        }
+
+
+        function DrawShadedTriangle(p0, p1, p2, color) {
+            // Sort the points from bottom to top.
+            if (p1.y < p0.y) { let swap = p0; p0 = p1; p1 = swap; }
+            if (p2.y < p0.y) { let swap = p0; p0 = p2; p2 = swap; }
+            if (p2.y < p1.y) { let swap = p1; p1 = p2; p2 = swap; }
+
+            // Compute X coordinates and H values of the edges.
+            let x01 = Interpolate(p0.y, p0.x, p1.y, p1.x);
+            let h01 = Interpolate(p0.y, p0.h, p1.y, p1.h);
+
+            let x12 = Interpolate(p1.y, p1.x, p2.y, p2.x);
+            let h12 = Interpolate(p1.y, p1.h, p2.y, p2.h);
+
+            let x02 = Interpolate(p0.y, p0.x, p2.y, p2.x);
+            let h02 = Interpolate(p0.y, p0.h, p2.y, p2.h);
+
+            // Merge the two short sides.
+            x01.pop();
+            let x012 = x01.concat(x12);
+
+            h01.pop();
+            let h012 = h01.concat(h12);
+
+            // Determine which is left and which is right.
+            let x_left, x_right;
+            let h_left, h_right;
+            let m = (x02.length / 2) | 0;
+            if (x02[m] < x012[m]) {
+                x_left = x02; x_right = x012;
+                h_left = h02; h_right = h012;
+            } else {
+                x_left = x012; x_right = x02;
+                h_left = h012; h_right = h02;
+            }
+
+            // Draw horizontal segments.
+            for (let y = p0.y; y <= p2.y; y++) {
+                let xl = x_left[y - p0.y] | 0;
+                let xr = x_right[y - p0.y] | 0;
+                let h_segment = Interpolate(xl, h_left[y - p0.y], xr, h_right[y - p0.y]);
+
+                for (let x = xl; x <= xr; x++) {
+                    PutPixel(x, y, color.mul(h_segment[x - xl]));
+                }
+            }
+        }
+
+        let p0 = new Pt(-200, -250, 0.3);
+        let p1 = new Pt(200, 50, 0.1);
+        let p2 = new Pt(20, 250, 1.0);
+
+        // 着色三角形
+        DrawShadedTriangle(p0, p1, p2, new Color(0, 255, 0));
+
+        UpdateCanvas();
+
+    </script>
+
+</body>
+
+</html>
