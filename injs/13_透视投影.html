@@ -20,7 +20,11 @@
 
     // A color.
     function Color(r, g, b) {
-        return { r, g, b };
+        return {
+            r,
+            g,
+            b
+        };
     }
 
     // The PutPixel() function.
@@ -47,12 +51,19 @@
 
     // A Point.
     function Pt(x, y) {
-        return { x, y };
+        return {
+            x,
+            y
+        };
     }
 
     // A 3D vertex
     function Vertex(x, y, z) {
-        return { x, y, z };
+        return {
+            x,
+            y,
+            z
+        };
     }
 
     function Interpolate(i0, d0, i1, d1) {
@@ -73,11 +84,16 @@
 
 
     function DrawLine(p0, p1, color) {
-        let dx = p1.x - p0.x, dy = p1.y - p0.y;
+        let dx = p1.x - p0.x,
+            dy = p1.y - p0.y;
 
         if (Math.abs(dx) > Math.abs(dy)) {
             // The line is horizontal-ish. Make sure it's left to right.
-            if (dx < 0) { let swap = p0; p0 = p1; p1 = swap; }
+            if (dx < 0) {
+                let swap = p0;
+                p0 = p1;
+                p1 = swap;
+            }
 
             // Compute the Y values and draw.
             let ys = Interpolate(p0.x, p0.y, p1.x, p1.y);
@@ -86,7 +102,11 @@
             }
         } else {
             // The line is verical-ish. Make sure it's bottom to top.
-            if (dy < 0) { let swap = p0; p0 = p1; p1 = swap; }
+            if (dy < 0) {
+                let swap = p0;
+                p0 = p1;
+                p1 = swap;
+            }
 
             // Compute the X values and draw.
             let xs = Interpolate(p0.y, p0.x, p1.y, p1.x);
@@ -142,7 +162,6 @@
     DrawLine(ProjectVertex(vD), ProjectVertex(vDb), GREEN);
 
     UpdateCanvas();
-
 </script>
 
 </html>
