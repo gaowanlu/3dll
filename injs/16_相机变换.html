@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型和模型实例</title>
+</head>
+
+<div class="centered">
+    <canvas id="canvas" width=600 height=600 style="border: 1px grey solid"></canvas>
+</div>
+
+<script>
+    "use strict";
+
+    // ======================================================================
+    // Low-level canvas access.
+    // ======================================================================
+
+    let canvas = document.getElementById("canvas");
+    let canvas_context = canvas.getContext("2d");
+    let canvas_buffer = canvas_context.getImageData(0, 0, canvas.width, canvas.height);
+
+    // A color.
+    function Color(r, g, b) {
+        return {
+            r,
+            g,
+            b,
+            mul: function (n) {
+                return new Color(this.r * n, this.g * n, this.b * n);
+            },
+        };
+    }
+
+    // The PutPixel() function.
+    function PutPixel(x, y, color) {
+        x = canvas.width / 2 + (x | 0);
+        y = canvas.height / 2 - (y | 0) - 1;
+
+        if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) {
+            return;
+        }
+
+        let offset = 4 * (x + canvas_buffer.width * y);
+        canvas_buffer.data[offset++] = color.r;
+        canvas_buffer.data[offset++] = color.g;
+        canvas_buffer.data[offset++] = color.b;
+        canvas_buffer.data[offset++] = 255; // Alpha = 255 (full opacity)
+    }
+
+
+    // Displays the contents of the offscreen buffer into the canvas.
+    function UpdateCanvas() {
+        canvas_context.putImageData(canvas_buffer, 0, 0);
+    }
+
+    // ======================================================================
+    // Data model.
+    // ======================================================================
+
+    // A Point.
+    function Pt(x, y, h) {
+        return {
+            x,
+            y,
+            h
+        };
+    }
+
+    // A 3D vertex.
+    function Vertex(x, y, z) {
+        return {
+            x,
+            y,
+            z,
+            add: function (v) {
+                return new Vertex(this.x + v.x, this.y + v.y, this.z + v.z);
+            },
+            mul: function (n) {
+                return new Vertex(this.x * n, this.y * n, this.z * n);
+            },
+        }
+    }
+
+    // A 4D vertex (a 3D vertex in homogeneous coordinates).
+    function Vertex4(x, y, z, w) {
+        return {
+            x,
+            y,
+            z,
+            w
+        };
+    }
+
+    // A 4x4 matrix.
+    function Mat4x4(data) {
+        return {
+            data
+        };
+    }
+
+    // 4x4 identity matrix.
+    const Identity4x4 = new Mat4x4([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ]);
+
+    // A Triangle.
+    function Triangle(v0, v1, v2, color) {
+        return {
+            v0,
+            v1,
+            v2,
+            color
+        };
+    }
+
+    // A Model.
+    function Model(vertices, triangles) {
+        return {
+            vertices,
+            triangles
+        };
+    }
+
+    // An Instance.
+    // model 模型
+    // position 位置
+    // orientation 方向
+    // scale 缩放
+    function Instance(model, position, orientation, scale) {
+        this.model = model;
+        this.position = position;
+        this.orientation = orientation || Identity4x4;
+        this.scale = scale || 1.0;
+        this.transform = MultiplyMM4(MakeTranslationMatrix(this.position), MultiplyMM4(this.orientation,
+            MakeScalingMatrix(this.scale)));
+    }
+
+    // The Camera.
+    function Camera(position, orientation) {
+        return {
+            position,
+            orientation
+        };
+    }
+
+    // ======================================================================
+    // Linear algebra and helpers.
+    // ======================================================================
+
+    // Makes a transform matrix for a rotation around the OY axis.
+    // 创建绕OY轴旋转的变换矩阵
+    function MakeOYRotationMatrix(degrees) {
+        let cos = Math.cos(degrees * Math.PI / 180.0);
+        let sin = Math.sin(degrees * Math.PI / 180.0);
+
+        return new Mat4x4([
+            [cos, 0, -sin, 0],
+            [0, 1, 0, 0],
+            [sin, 0, cos, 0],
+            [0, 0, 0, 1]
+        ]);
+    }
+
+    // Makes a transform matrix for a translation.
+    // 创建一个平移变换矩阵
+    function MakeTranslationMatrix(translation) {
+        return new Mat4x4([
+            [1, 0, 0, translation.x],
+            [0, 1, 0, translation.y],
+            [0, 0, 1, translation.z],
+            [0, 0, 0, 1]
+        ]);
+    }
+
+    // Makes a transform matrix for a scaling.
+    // 创建一个缩放变换矩阵
+    function MakeScalingMatrix(scale) {
+        return new Mat4x4([
+            [scale, 0, 0, 0],
+            [0, scale, 0, 0],
+            [0, 0, scale, 0],
+            [0, 0, 0, 1]
+        ]);
+    }
+
+    // Multiplies a 4x4 matrix and a 4D vector.
+    // 4x4矩阵和4D向量相乘
+    function MultiplyMV(mat4x4, vec4) {
+        let result = [0, 0, 0, 0];
+        let vec = [vec4.x, vec4.y, vec4.z, vec4.w];
+
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                result[i] += mat4x4.data[i][j] * vec[j];
+            }
+        }
+        return new
+        Vertex4(result[0], result[1], result[2], result[3]);
+    }
+
+    // Multiplies two 4x4 matrices.
+    // 两个4x4矩阵相乘
+    function MultiplyMM4(matA, matB) {
+        let result = new Mat4x4([
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0]
+        ]);
+
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                for (let k = 0; k < 4; k++) {
+                    result.data[i][j] += matA.data[i][k] * matB.data[k][j];
+                }
+            }
+        }
+        return result;
+    }
+
+    // Transposes a 4x4 matrix.
+    // 转置一个4x4矩阵
+    function Transposed(mat) {
+        let result = new Mat4x4([
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0]
+        ]);
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 4; j++) {
+                result.data[i][j] = mat.data[j][i];
+            }
+        }
+        return result;
+    }
+
+    // ======================================================================
+    // Rasterization code.
+    // ======================================================================
+
+    // Scene setup.
+    let viewport_size = 1;
+    let projection_plane_z = 1;
+
+    function Interpolate(i0, d0, i1, d1) {
+        if (i0 == i1) {
+            return [d0];
+        }
+
+        let values = [];
+        let a = (d1 - d0) / (i1 - i0);
+        let d = d0;
+        for (let i = i0; i <= i1; i++) {
+            values.push(d);
+            d += a;
+        }
+        return values;
+    }
+
+    function DrawLine(p0, p1, color) {
+        let dx = p1.x - p0.x,
+            dy = p1.y - p0.y;
+
+        if (Math.abs(dx) > Math.abs(dy)) {
+            // The line is horizontal-ish. Make sure it's left to right.
+            if (dx < 0) {
+                let swap = p0;
+                p0 = p1;
+                p1 = swap;
+            }
+
+            // Compute the Y values and draw.
+            let ys = Interpolate(p0.x, p0.y, p1.x, p1.y);
+            for (let x = p0.x; x <= p1.x; x++) {
+                PutPixel(x, ys[(x - p0.x) | 0], color);
+            }
+        } else {
+            // The line is verical-ish. Make sure it's bottom to top.
+            if (dy < 0) {
+                let swap = p0;
+                p0 = p1;
+                p1 = swap;
+            }
+
+            // Compute the X values and draw.
+            let xs = Interpolate(p0.y, p0.x, p1.y, p1.x);
+            for (let y = p0.y; y <= p1.y; y++) {
+                PutPixel(xs[(y - p0.y) | 0], y, color);
+            }
+        }
+    }
+
+    function DrawWireframeTriangle(p0, p1, p2, color) {
+        DrawLine(p0, p1, color);
+        DrawLine(p1, p2, color);
+        DrawLine(p0, p2, color);
+    }
+
+    // Converts 2D viewport coordinates to 2D canvas coordinates.
+    function ViewportToCanvas(p2d) {
+        return new Pt(
+            p2d.x * canvas.width / viewport_size,
+            p2d.y * canvas.height / viewport_size);
+    }
+
+    function ProjectVertex(v) {
+        return ViewportToCanvas(new Pt(
+            v.x * projection_plane_z / v.z,
+            v.y * projection_plane_z / v.z));
+    }
+
+    function RenderTriangle(triangle, projected) {
+        DrawWireframeTriangle(
+            projected[triangle.v0],
+            projected[triangle.v1],
+            projected[triangle.v2],
+            triangle.color);
+    }
+
+    function RenderModel(model, transform) {
+        let projected = [];
+        for (let i = 0; i < model.vertices.length; i++) {
+            let vertex = model.vertices[i]
+            let vertexH = new Vertex4(vertex.x,
+                vertex.y, vertex.z, 1);
+            projected.push(ProjectVertex(MultiplyMV(transform, vertexH)));
+        }
+        for (let i = 0; i <
+            model.triangles.length; i++) {
+            RenderTriangle(model.triangles[i], projected);
+        }
+    }
+
+    function RenderScene(camera, instances) {
+        // 此处用转置的原因是，旋转矩阵是正交矩阵，转置等于逆矩阵
+        let cameraMatrix = MultiplyMM4(Transposed(camera.orientation), MakeTranslationMatrix(camera.position.mul(-1)));
+
+        for (let i = 0; i < instances.length; i++) {
+            let transform = MultiplyMM4(cameraMatrix, instances[i].transform);
+            RenderModel(instances[i].model, transform);
+        }
+    }
+
+    const vertices = [
+        new Vertex(1, 1, 1),
+        new Vertex(-1, 1, 1),
+        new Vertex(-1, -1, 1),
+        new Vertex(1, -1, 1),
+        new Vertex(1, 1, -1),
+        new Vertex(-1, 1, -1),
+        new Vertex(-1, -1, -1),
+        new Vertex(1, -1, -1)
+    ];
+
+    const RED = new Color(255, 0, 0);
+    const GREEN = new Color(0, 255, 0);
+    const BLUE = new Color(0, 0, 255);
+    const YELLOW = new Color(255, 255, 0);
+    const PURPLE = new Color(255, 0, 255);
+    const CYAN = new Color(0, 255, 255);
+
+    const triangles = [
+        new Triangle(0, 1, 2, RED),
+        new Triangle(0, 2, 3, RED),
+        new Triangle(4, 0, 3, GREEN),
+        new Triangle(4, 3, 7, GREEN),
+        new Triangle(5, 4, 7, BLUE),
+        new Triangle(5, 7, 6, BLUE),
+        new Triangle(1, 5, 6, YELLOW),
+        new Triangle(1, 6, 2, YELLOW),
+        new Triangle(4, 5, 1, PURPLE),
+        new Triangle(4, 1, 0, PURPLE),
+        new Triangle(2, 6, 7, CYAN),
+        new Triangle(2, 7, 3, CYAN)
+    ];
+
+    let cube = new Model(vertices, triangles);
+
+    let instances = [
+        new Instance(cube, new Vertex(-1.5, 0, 7), Identity4x4, 0.75),
+        new Instance(cube, new Vertex(1.25, 2.5, 7.5), MakeOYRotationMatrix(195)),
+    ];
+
+    let camera = new Camera(new Vertex(-3, 1, 2), MakeOYRotationMatrix(-30));
+
+    function Render() {
+        RenderScene(camera, instances);
+        UpdateCanvas();
+    }
+
+    Render();
+</script>
+
+</html>
